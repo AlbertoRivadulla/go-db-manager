@@ -14,6 +14,8 @@ import (
 
 	"carmaintenance/internal/core"
 	"carmaintenance/cli/cliapp"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
@@ -38,8 +40,10 @@ func main() {
 	// Run the main CLI app logic
 	go func() {
 		// TODO: Initialize Bubbletea
-
-		if err := cliapp.Run(ctx, backend); err != nil {
+		model := cliapp.NewModel(ctx, backend)
+		p := tea.NewProgram(model)
+		// p := tea.NewProgram(model, tea.WithAltScreen())
+		if _, err := p.Run(); err != nil {
 			errCh <- err
 			return
 		}
@@ -48,13 +52,10 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		fmt.Println("Shutting down the app")
+		return
 	case err := <-errCh:
 		if err != nil {
 			fmt.Printf("CLI app error: %w\n", err)
-		} else {
-			// TODO: Remove this case
-			fmt.Println("CLI app exited normally")
 		}
 	}
 }
