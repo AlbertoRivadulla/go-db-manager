@@ -1,54 +1,65 @@
 package core
 
 import (
-	"fmt"
+    "fmt"
 
-	"database/sql"
-	_ "modernc.org/sqlite"
+    "database/sql"
+    _ "modernc.org/sqlite"
 )
 
 type SQLiteStore struct {
-	db *sql.DB
+    db *sql.DB
 }
 
 func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SQLiteStore{db: db}, nil
-}
-
-func (store *SQLiteStore) RunQuery(query string) (map[string]interface{}, error) {
-	fmt.Printf("\nRunning query: %s\n", query)
-
-	// result, err := store.db.Exec(
-	rows, err := store.db.Query(
-		query,
-    )
-	defer rows.Close()
+    db, err := sql.Open("sqlite", dbPath)
     if err != nil {
-		fmt.Printf("Error running query: %w\n", err)
         return nil, err
     }
-    
+
+    return &SQLiteStore{db: db}, nil
+}
+
+func (store *SQLiteStore) RunQueryNoReturn(query string) (sql.Result, error) {
+    fmt.Printf("\nRunning query:\n%s\n", query)
+
+    result, err := store.db.Exec(query)
+    if err != nil {
+        return nil, fmt.Errorf("running query %s: %w", query, err)
+    }
+
+    return result, nil
+}
+
+func (store *SQLiteStore) RunQuery(query string) (map[string]any, error) {
+    fmt.Printf("\nRunning query:\n%s\n", query)
+
+    // result, err := store.db.Exec(
+    rows, err := store.db.Query(
+        query,
+    )
+    if err != nil {
+        return nil, fmt.Errorf("running query %s: %w", query, err)
+    }
+    defer rows.Close()
+
     // Get column names
     columns, err := rows.Columns()
     if err != nil {
         return nil, err
     }
 
-	// Create a slice of interface{} to hold the values
-    values := make([]interface{}, len(columns))
-    valuePtrs := make([]interface{}, len(columns))
+    // Create a slice of any to hold the values
+    values := make([]any, len(columns))
+    valuePtrs := make([]any, len(columns))
     for i := range values {
         valuePtrs[i] = &values[i]
     }
 
     // Get the first row
     if !rows.Next() {
-        return nil, sql.ErrNoRows
+        return nil, nil
+        // return nil, sql.ErrNoRows
     }
 
     // Scan into the value pointers
@@ -57,7 +68,7 @@ func (store *SQLiteStore) RunQuery(query string) (map[string]interface{}, error)
     }
 
     // Create map with column names as keys
-    result := make(map[string]interface{})
+    result := make(map[string]any)
     for i, col := range columns {
         result[col] = values[i]
     }
@@ -65,38 +76,38 @@ func (store *SQLiteStore) RunQuery(query string) (map[string]interface{}, error)
     return result, nil
 }
 
-func (store *SQLiteStore) QueryToMap(query string, args ...interface{}) ([]map[string]interface{}, error) {
-	fmt.Printf("\nRunning query: %s\n", query)
+func (store *SQLiteStore) QueryToMap(query string, args ...any) ([]map[string]any, error) {
+    fmt.Printf("\nRunning query: %s\n", query)
     rows, err := store.db.Query(query, args...)
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-    
+
     columns, err := rows.Columns()
     if err != nil {
         return nil, err
     }
-    
-    var results []map[string]interface{}
-    
+
+    var results []map[string]any
+
     for rows.Next() {
-        // Create a slice of interface{} for this row
-        values := make([]interface{}, len(columns))
-        valuePtrs := make([]interface{}, len(columns))
+        // Create a slice of any for this row
+        values := make([]any, len(columns))
+        valuePtrs := make([]any, len(columns))
         for i := range values {
             valuePtrs[i] = &values[i]
         }
-        
+
         if err := rows.Scan(valuePtrs...); err != nil {
             return nil, err
         }
-        
+
         // Create map for this row
-        rowMap := make(map[string]interface{})
+        rowMap := make(map[string]any)
         for i, col := range columns {
             val := values[i]
-            
+
             // Convert []byte to string for better usability
             if b, ok := val.([]byte); ok {
                 rowMap[col] = string(b)
@@ -104,11 +115,9 @@ func (store *SQLiteStore) QueryToMap(query string, args ...interface{}) ([]map[s
                 rowMap[col] = val
             }
         }
-        
+
         results = append(results, rowMap)
     }
-    
+
     return results, rows.Err()
 }
-
-

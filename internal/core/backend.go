@@ -1,6 +1,8 @@
 package core
 
 import (
+    "database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -85,21 +87,63 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	// 	fmt.Println("")
 	// }
 
-
-
-	// TODO: Load specs
-
-	// TODO: Parse the specification files
-
 	backend := Backend {
 		store: *store,
 	}
 
 	err = backend.parseSpecs(specsDir)
-
 	if err != nil {
 		return nil, err
 	}
+
+	// Create the different tables
+	for _, tableSpec := range backend.tableSpecs {
+		queryCreate, err := tableSpec.Table.QueryCreate()
+		if err != nil {
+			return nil, fmt.Errorf("get query to create table %s: %w", tableSpec.Table.Name, err)
+		}
+
+		_, err = store.RunQueryNoReturn(queryCreate)
+		if err != nil {
+			return nil, fmt.Errorf("create table %s: %w", tableSpec.Table.Name, err)
+		}
+	}
+	//
+	// result, err := store.RunQuery(`
+	// 	SELECT * FROM Cars
+	// `)
+	// if err != nil {
+	// 	if errors.Is(err, sql.ErrNoRows) {
+	// 		fmt.Printf("No rows\n")
+	// 	} else {
+	// 		fmt.Printf("Error %w\n", err)
+	// 	}
+	// }
+	//
+	// fmt.Printf("Number of rows in result %d\n", len(result))
+	//
+	// fmt.Printf("Result:\n")
+	// for k, v := range result {
+	// 	fmt.Printf("\t%s : %s\n", k, v)
+	//    }
+	//
+	// resultMapList, err := store.QueryToMap(`
+	// 	SELECT * FROM Cars
+	// `)
+	// if err != nil {
+	// 	fmt.Printf("Error %w\n", err)
+	// }
+	//
+	// fmt.Printf("Number of rows in result %d\n", len(resultMapList))
+	//
+	// fmt.Printf("Result map:\n")
+	// for key := range(resultMapList[0]) {
+	// 	fmt.Printf("\t%s:", key)
+	// 	for _, row := range resultMapList{
+	// 		fmt.Printf("\t%s", row[key])
+	// 	}
+	// 	fmt.Println("")
+	// }
 
 	return &backend, nil
 }

@@ -85,3 +85,72 @@ func (c Column) Validate() error {
 
 	return nil
 }
+
+func (t Table) QueryCreate() (string, error) {
+	var defs []string
+
+	for _, col := range t.Columns {
+		defs = append(defs, col.QueryDefinition())
+	}
+
+	if t.PrimaryKey != "" {
+		defs = append(
+			defs,
+			fmt.Sprintf(
+				"PRIMARY KEY (%s)",
+				t.PrimaryKey,
+			),
+		)
+	}
+
+	for _, fk := range t.ForeignKeys {
+		defs = append(defs, fk.QueryDefinition())
+	}
+
+	stmt := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s (\n  %s\n);",
+		t.Name,
+		strings.Join(defs, ",\n  "),
+	)
+
+	return stmt, nil
+}
+
+func (c Column) QueryDefinition() string {
+	var parts []string
+
+	parts = append(parts, fmt.Sprintf("%s %s", c.Name, c.Type))
+
+	if !c.Nullable {
+		parts = append(parts, "NOT NULL")
+	}
+
+	if c.Default != nil {
+		parts = append(parts, fmt.Sprintf("DEFAULT '%s'", *c.Default))
+	}
+
+	if c.Check != nil {
+		parts = append(parts, fmt.Sprintf("CHECK (%s)", *c.Check))
+	}
+
+	return strings.Join(parts, " ")
+}
+
+func (fk ForeignKey) QueryDefinition() string {
+	stmt := fmt.Sprintf(
+		"FOREIGN KEY (%s) REFERENCES %s(%s)",
+		fk.Column,
+		fk.References.Table,
+		fk.References.Column,
+	)
+
+	if fk.OnDelete != "" {
+		stmt += " ON DELETE " + strings.ToUpper(fk.OnDelete)
+	}
+
+	if fk.OnUpdate != "" {
+		stmt += " ON UPDATE " + strings.ToUpper(fk.OnUpdate)
+	}
+
+	return stmt
+}
