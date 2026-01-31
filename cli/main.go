@@ -8,9 +8,7 @@ import (
 	// "log"
 	"os"
 	"os/signal"
-	// "strings"
 	"syscall"
-	// "time"
 
 	"carmaintenance/internal/core"
 	"carmaintenance/cli/cliapp"
@@ -27,10 +25,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// backend, err := core.NewBackend(dbPath, specsDir)
 	backend, err := core.NewBackend(dbPath, specsDir)
 	if err != nil {
-		fmt.Printf("Error: %w\n", err)
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 	defer backend.Cleanup()
