@@ -21,8 +21,6 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 }
 
 func (store *SQLiteStore) RunQueryNoReturn(query string) (sql.Result, error) {
-    fmt.Printf("\nRunning query:\n%s\n", query)
-
     result, err := store.db.Exec(query)
     if err != nil {
         return nil, fmt.Errorf("running query %s: %w", query, err)
@@ -32,9 +30,6 @@ func (store *SQLiteStore) RunQueryNoReturn(query string) (sql.Result, error) {
 }
 
 func (store *SQLiteStore) RunQuery(query string) (map[string]any, error) {
-    fmt.Printf("\nRunning query:\n%s\n", query)
-
-    // result, err := store.db.Exec(
     rows, err := store.db.Query(
         query,
     )
@@ -77,7 +72,6 @@ func (store *SQLiteStore) RunQuery(query string) (map[string]any, error) {
 }
 
 func (store *SQLiteStore) QueryToMap(query string, args ...any) ([]map[string]any, error) {
-    fmt.Printf("\nRunning query: %s\n", query)
     rows, err := store.db.Query(query, args...)
     if err != nil {
         return nil, err

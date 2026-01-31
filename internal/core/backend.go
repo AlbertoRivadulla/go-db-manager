@@ -1,15 +1,13 @@
 package core
 
 import (
-    "database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	// _ "modernc.org/sqlite"
 
-	"carmaintenance/internal/core/models"
+	"carmaintenance/internal/core/spec-models"
 
 	"gopkg.in/yaml.v3"
 )
@@ -17,8 +15,8 @@ import (
 type Backend struct {
 	store SQLiteStore
 	tableSpecs []core.TableSpec
-	// TODO: different specs of the database
 	// TODO: queries
+	// TODO: rules
 }
 
 func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
@@ -32,7 +30,7 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	fmt.Printf("Created database\n")
 
 	// // NOTE: Example of adding data to the database
-	// _, err = store.RunQuery(`read
+	// _, err = store.RunQuery(`
 	//        CREATE TABLE IF NOT EXISTS entries (
 	//            title TEXT NOT NULL,
 	//            content TEXT NOT NULL
@@ -108,42 +106,6 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 			return nil, fmt.Errorf("create table %s: %w", tableSpec.Table.Name, err)
 		}
 	}
-	//
-	// result, err := store.RunQuery(`
-	// 	SELECT * FROM Cars
-	// `)
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		fmt.Printf("No rows\n")
-	// 	} else {
-	// 		fmt.Printf("Error %w\n", err)
-	// 	}
-	// }
-	//
-	// fmt.Printf("Number of rows in result %d\n", len(result))
-	//
-	// fmt.Printf("Result:\n")
-	// for k, v := range result {
-	// 	fmt.Printf("\t%s : %s\n", k, v)
-	//    }
-	//
-	// resultMapList, err := store.QueryToMap(`
-	// 	SELECT * FROM Cars
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	//
-	// fmt.Printf("Number of rows in result %d\n", len(resultMapList))
-	//
-	// fmt.Printf("Result map:\n")
-	// for key := range(resultMapList[0]) {
-	// 	fmt.Printf("\t%s:", key)
-	// 	for _, row := range resultMapList{
-	// 		fmt.Printf("\t%s", row[key])
-	// 	}
-	// 	fmt.Println("")
-	// }
 
 	return &backend, nil
 }
@@ -191,7 +153,6 @@ func (backend *Backend) parseSpecs(specsDir *string) error {
 }
 
 func (backend *Backend) Cleanup() {
-	fmt.Printf("Closing database\n")
 	backend.store.db.Close()
 }
 
