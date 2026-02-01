@@ -25,8 +25,6 @@ The files in these directories have the following contents:
       name: MyTable
       schema: public
 
-      primary_key: id
-
       foreign_keys:
         - column: other_id
           references:
@@ -37,6 +35,7 @@ The files in these directories have the following contents:
         - name: id
           type: integer
           auto_increment: true
+          primary_key: true
           nullable: false
 
         - name: other

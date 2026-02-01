@@ -13,7 +13,6 @@ type Table struct {
 	Name string `yaml:"name"`
 	Description string `yaml:"desc"`
 	Schema string `yaml:"schema"`
-	PrimaryKey string `yaml:"primary_key"`
 	ForeignKeys []ForeignKey `yaml:"foreign_keys"`
 	Columns []Column `yaml:"columns"`
 }
@@ -34,6 +33,7 @@ type Column struct {
 	Name string `yaml:"name"`
 	Type string `yaml:"type"`
 	AutoIncrement bool `yaml:"auto_increment"`
+	PrimaryKey bool `yaml:"primary_key"`
 	Nullable bool `yaml:"nullable"`
 	Default *string `yaml:"default"`
 	Check *string `yaml:"check"`
@@ -64,8 +64,15 @@ func (t Table) Validate() error {
 	}
 
 	// Check that the primary key exists
-	if _, ok := columnSet[t.PrimaryKey]; !ok {
-		return fmt.Errorf("primary key column %s does not exist", t.PrimaryKey)
+	primaryKeyExists := false
+	for _, c := range t.Columns {
+		if c.PrimaryKey {
+			primaryKeyExists = true
+			break
+		}
+	}
+	if !primaryKeyExists {
+		return fmt.Errorf("no primary key exists")
 	}
 
 	return nil
@@ -91,17 +98,11 @@ func (t Table) QueryCreate() (string, error) {
 	var defs []string
 
 	for _, col := range t.Columns {
-		defs = append(defs, col.QueryDefinition())
-	}
-
-	if t.PrimaryKey != "" {
-		defs = append(
-			defs,
-			fmt.Sprintf(
-				"PRIMARY KEY (%s)",
-				t.PrimaryKey,
-			),
-		)
+		def := col.QueryDefinition()
+		if col.PrimaryKey {
+			def += " PRIMARY KEY"
+		}
+		defs = append(defs, def)
 	}
 
 	for _, fk := range t.ForeignKeys {

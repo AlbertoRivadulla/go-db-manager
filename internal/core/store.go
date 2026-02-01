@@ -115,3 +115,45 @@ func (store *SQLiteStore) QueryToMap(query string, args ...any) ([]map[string]an
 
     return results, rows.Err()
 }
+
+func (store *SQLiteStore) QueryTo2DimArray(query string, args ...any) ([][]string, error) {
+    rows, err := store.db.Query(query, args...)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    columns, err := rows.Columns()
+    if err != nil {
+        return nil, err
+    }
+
+    var results [][]string
+
+    for rows.Next() {
+        // Create a slice of any for this row
+        values := make([]any, len(columns))
+        valuePtrs := make([]any, len(columns))
+        for i := range values {
+            valuePtrs[i] = &values[i]
+        }
+
+        if err := rows.Scan(valuePtrs...); err != nil {
+            return nil, err
+        }
+
+        // Convert to []string
+        row := make([]string, len(columns))
+        for i, val := range values {
+            if val == nil {
+                row[i] = "NULL"
+            } else {
+                row[i] = fmt.Sprintf("%v", val)
+            }
+        }
+
+        results = append(results, row)
+    }
+
+    return results, rows.Err()
+}

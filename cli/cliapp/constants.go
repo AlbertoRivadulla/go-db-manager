@@ -32,4 +32,13 @@ var (
 	blueStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorBlue)
+	titleStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color("62")).
+		Foreground(lipgloss.Color("230")).
+		Padding(0, 1)
+
+	descStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Italic(true).
+		Padding(0, 1)
 )

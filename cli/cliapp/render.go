@@ -1,6 +1,8 @@
 package cliapp
 
 import (
+	"strings"
+
     // tea "github.com/charmbracelet/bubbletea"
     "github.com/charmbracelet/lipgloss"
 )
@@ -15,7 +17,7 @@ func (m Model) RenderLeftColumn() string {
 	case ViewTablesScreen:
 	   return columnStyle.Render(m.viewTablesMenuList.View())
 	case ManageTableScreen:
-		// TODO:
+		return columnStyle.Render(m.manageTableMenuList.View())
 	case AddEntryScreen:
 		// TODO:
 	case EditEntryScreen:
@@ -28,15 +30,30 @@ func (m Model) RenderLeftColumn() string {
 }
 
 func (m Model) RenderRightColumn() string {
-	//    columnStyle := lipgloss.NewStyle().
-	//        Padding(1).Width(m.rightWidth)
-	//
-	// switch m.currScreenRight {
-	// // TODO:
-	// // I think I will always show the table here
-	// }
-	//
-	// return columnStyle.Render(m.viewport.View())
+	if m.showTable {
+		var sections []string
+
+		sections = append(sections, titleStyle.Width(m.rightWidth - 4).Render(m.currTableName))
+		sections = append(sections, "")
+
+		sections = append(sections, descStyle.Render(m.currTableDesc))
+		sections = append(sections, "")
+
+		sections = append(sections, m.table.View())
+
+		content := strings.Join(sections, "\n")
+
+		containerStyle := lipgloss.NewStyle().
+			// Border(lipgloss.RoundedBorder()).
+			// BorderForeground(lipgloss.Color("62")).
+			Padding(1).
+			Width(m.rightWidth)
+
+		// columnStyle := lipgloss.NewStyle().
+		//     Padding(1).Width(m.leftWidth)
+
+		return containerStyle.Render(content)
+	}
 
 	return ""
 }

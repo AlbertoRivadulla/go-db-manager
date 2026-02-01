@@ -13,8 +13,9 @@ import (
 )
 
 type Backend struct {
-	store SQLiteStore
+	Store SQLiteStore
 	tableSpecs []core.TableSpec
+	mapTableSpecs map[string]*core.TableSpec
 	// TODO: queries
 	// TODO: rules
 }
@@ -85,7 +86,7 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	// }
 
 	backend := Backend {
-		store: *store,
+		Store: *store,
 	}
 
 	err = backend.parseSpecs(specsDir)
@@ -100,9 +101,20 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 			return nil, fmt.Errorf("get query to create table %s: %w", tableSpec.Table.Name, err)
 		}
 
-		_, err = store.RunQueryNoReturn(queryCreate)
+		_, err = backend.Store.RunQueryNoReturn(queryCreate)
 		if err != nil {
 			return nil, fmt.Errorf("create table %s: %w", tableSpec.Table.Name, err)
+		}
+	}
+
+	// FIXME: Delete this
+	for _ = range 100 {
+		_, err = store.RunQuery(`
+			INSERT INTO Cars (model, year, license_plate, chassis_nr, ITV_date, ITV_interval)
+			VALUES ("mod", "2000", "abcd", "algo123", "1/1/2001", 12)
+		`)
+		if err != nil {
+			fmt.Printf("Error %s\n", err)
 		}
 	}
 
@@ -113,8 +125,32 @@ func (backend *Backend) GetTableSpecs() []core.TableSpec {
 	return backend.tableSpecs
 }
 
+func (backend *Backend) GetColumnsInTable(table string) ([]string, error) {
+	tableSpec, ok := backend.mapTableSpecs[table]
+	if !ok {
+		return nil, fmt.Errorf("table %s not found", table)
+	}
+
+	var columns []string
+	for _, col := range tableSpec.Table.Columns {
+		columns = append(columns, col.Name)
+	}
+
+	return columns, nil
+}
+
+func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
+	query := fmt.Sprintf("SELECT * FROM %s;", table)
+	result, err := backend.Store.QueryTo2DimArray(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (backend *Backend) Cleanup() {
-	backend.store.db.Close()
+	backend.Store.db.Close()
 }
 
 func (backend *Backend) parseSpecs(specsDir *string) error {
@@ -134,6 +170,11 @@ func (backend *Backend) parseSpecs(specsDir *string) error {
 			backend.tableSpecs, err = loadYAMLSpecs[core.TableSpec](tablesDir)
 			if err != nil {
 				return fmt.Errorf("read tables directory: %w", err)
+			}
+
+			backend.mapTableSpecs = map[string]*core.TableSpec{}
+			for i, tableSpec := range backend.tableSpecs {
+				backend.mapTableSpecs[tableSpec.Table.Name] = &backend.tableSpecs[i]
 			}
 
 		} else if entry.Name() == "queries" {

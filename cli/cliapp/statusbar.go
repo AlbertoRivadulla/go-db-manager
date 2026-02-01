@@ -7,13 +7,13 @@ import (
 type StatusBarState string
 
 const (
-	StatusBarStateGreen StatusBarState = "green"
-	StatusBarStateRed StatusBarState = "red"
+	StatusBarStateOk StatusBarState = "green"
+	StatusBarStateErr StatusBarState = "red"
 )
 
 var styleMapByColor = map[StatusBarState]lipgloss.Style{
-	StatusBarStateGreen:  statusStyleGreen,
-	StatusBarStateRed:    statusStyleErr,
+	StatusBarStateOk:  statusStyleGreen,
+	StatusBarStateErr:    statusStyleErr,
 }
 
 type StatusBarProps struct {
@@ -35,7 +35,7 @@ var (
 				Padding(0, 1).
 				MarginRight(1)
 
-	statusStyleErr    = statusStyleGreen.Background(colorRed)
+	statusStyleErr = statusStyleGreen.Background(colorRed)
 
 	statusText = lipgloss.NewStyle().Inherit(statusBarStyle)
 )

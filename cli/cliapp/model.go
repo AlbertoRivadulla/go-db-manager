@@ -2,7 +2,6 @@ package cliapp
 
 import (
 	"context"
-	// "strings"
 
 	"carmaintenance/internal/core"
 
@@ -22,6 +21,7 @@ const (
 	AddEntryScreen
 	EditEntryScreen
 	SelectQueryScreen
+	TableScreen
 )
 
 type Model struct {
@@ -40,6 +40,9 @@ type Model struct {
 	table table.Model
 	viewport viewport.Model // TODO: I think I don't need this
 
+	currTableName string
+	currTableDesc string
+	showTable bool
 	status StatusBarProps
 
 	width int
@@ -70,12 +73,14 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		menuItem{title: "Run queries", desc: "Run one of the specified queries"},
 	}
 	mainMenuList := list.New(mainMenuItems, list.NewDefaultDelegate(), 0, 0)
+	mainMenuList.Styles.Title = titleStyle
 	mainMenuList.Title = "Main menu"
 	mainMenuList.InfiniteScrolling = true
 	mainMenuList.SetShowStatusBar(false)
-	mainMenuList.SetFilteringEnabled(true)
+	mainMenuList.SetFilteringEnabled(false)
 
 	viewTablesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	viewTablesMenuList.Styles.Title = titleStyle
 	viewTablesMenuList.Title = "View tables"
 	viewTablesMenuList.InfiniteScrolling = true
 	viewTablesMenuList.SetShowStatusBar(false)
@@ -87,6 +92,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		menuItem{title: "Edit entry", desc: "Select an entry and edit or remove it"},
 	}
 	manageTableMenuList := list.New(manageTableMenuItems, list.NewDefaultDelegate(), 0, 0)
+	manageTableMenuList.Styles.Title = titleStyle
 	manageTableMenuList.Title = "Manage table - ???? (Table title)"
 	manageTableMenuList.InfiniteScrolling = true
 	manageTableMenuList.SetShowStatusBar(false)
@@ -94,10 +100,28 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	// TODO: Set the title after selecting a table
 
 	runQueriesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	runQueriesMenuList.Styles.Title = titleStyle
 	runQueriesMenuList.Title = "Run query"
 	runQueriesMenuList.InfiniteScrolling = true
 	runQueriesMenuList.SetShowStatusBar(false)
 	runQueriesMenuList.SetFilteringEnabled(false)
+
+	dataTable := table.New(
+		table.WithFocused(true),
+		table.WithHeight(10), // TODO: Set this
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	dataTable.SetStyles(s)
 
 	// Viewport for text results
 	viewport := viewport.New(0, 0)
@@ -118,8 +142,10 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		runQueriesMenuList: runQueriesMenuList,
 
 		viewport: viewport,
+		table: dataTable,
 
 		status: status,
+		showTable: false,
 
 		ctx: ctx,
 		backend: backend,
@@ -170,6 +196,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.status.Width = m.width
 
+		m.table.SetHeight(m.height - 6)
+
 		if !m.ready {
 			m.ready = true
 		}
@@ -204,16 +232,13 @@ func (m Model) View() string {
 
 func (m Model) filterState() bool {
 	// TODO: Take into account the different screens that can be in the filtering state
-	return m.mainMenuList.FilterState() == list.Filtering ||
-		m.viewTablesMenuList.FilterState() == list.Filtering
+	return m.viewTablesMenuList.FilterState() == list.Filtering
 }
 
 func (m Model) updateFilteredScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// TODO: Take into account the different screens that can be in the filtering state
 	var cmd tea.Cmd
 	switch m.currScreenFocus {
-	case MainMenuScreen:
-		m.mainMenuList, cmd = m.mainMenuList.Update(msg)
 	case ViewTablesScreen:
 		m.viewTablesMenuList, cmd = m.viewTablesMenuList.Update(msg)
 	}
