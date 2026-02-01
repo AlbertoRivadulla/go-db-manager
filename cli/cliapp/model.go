@@ -2,7 +2,7 @@ package cliapp
 
 import (
 	"context"
-	"strings"
+	// "strings"
 
 	"carmaintenance/internal/core"
 
@@ -39,10 +39,13 @@ type Model struct {
 	table table.Model
 	viewport viewport.Model
 
+	status StatusBarProps
+
 	width int
 	leftWidth int
 	rightWidth int
 	height int
+	mainItemsHeight int
 
 	ready bool
 
@@ -69,7 +72,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	mainMenuList.Title = "Main menu"
 	mainMenuList.InfiniteScrolling = true
 	mainMenuList.SetShowStatusBar(false)
-	mainMenuList.SetFilteringEnabled(true)
+	mainMenuList.SetFilteringEnabled(false)
 
 	manageTableMenuItems := []list.Item{
 		menuItem{title: "View table", desc: "Show all the entries of the table"},
@@ -86,6 +89,11 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	// Viewport for text results
 	viewport := viewport.New(0, 0)
 
+	status := StatusBarProps{
+		State: "green",
+		Message: "",
+	}
+
 	return Model{
 		currScreen: MainMenuScreen,
 
@@ -93,6 +101,8 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		manageTableMenuList: manageTableMenuList,
 
 		viewport: viewport,
+
+		status: status,
 
 		ctx: ctx,
 		backend: backend,
@@ -122,26 +132,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			// TODO: Manage interaction with the different menus
-
-			// example DB interaction
-			// result := queryDB(m.ctx, m.db)
-			// m.log = append(m.log, result)
-			m.log = append(m.log, "pressed enter")
+			m.status.Message = "pressed enter"
+			m.status.State = "red"
 		}
 
 	case tea.WindowSizeMsg:
 		// handle resize if needed
 		m.width = msg.Width
 		m.height = msg.Height
+		m.mainItemsHeight = m.height - 2
 
 		// Column width
 		m.leftWidth = int(float64(m.width) * 0.4)
 		m.rightWidth = m.width - m.leftWidth - 2
 
-		m.mainMenuList.SetSize(m.leftWidth, m.height - 2)
-		m.manageTableMenuList.SetSize(m.leftWidth, m.height - 2)
+		m.mainMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
+		m.manageTableMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.viewport.Width = m.rightWidth
-		m.viewport.Height = m.height - 4
+		m.viewport.Height = m.mainItemsHeight
+
+		m.status.Width = m.width
 
 		if !m.ready {
 			m.ready = true
@@ -189,9 +199,7 @@ func (m Model) View() string {
 		rightColumn,
 	)
 
-    status := lipgloss.NewStyle().
-        Foreground(lipgloss.Color("241")).
-		Render(strings.Join(m.log, " - "))
+	status := m.status.Render()
 
-	return content + status
+	return content + "\n" + status
 }
