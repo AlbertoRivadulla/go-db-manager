@@ -28,13 +28,15 @@ func (m Model) RenderLeftColumn() string {
 }
 
 func (m Model) RenderRightColumn() string {
-    columnStyle := lipgloss.NewStyle().
-        Padding(1).Width(m.rightWidth)
+	//    columnStyle := lipgloss.NewStyle().
+	//        Padding(1).Width(m.rightWidth)
+	//
+	// switch m.currScreenRight {
+	// // TODO:
+	// // I think I will always show the table here
+	// }
+	//
+	// return columnStyle.Render(m.viewport.View())
 
-	switch m.currScreenRight {
-	// TODO:
-	// I think I will always show the table here
-	}
-
-	return columnStyle.Render(m.viewport.View())
+	return ""
 }

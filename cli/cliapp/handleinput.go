@@ -1,13 +1,11 @@
 package cliapp
 
 import (
-	"fmt"
 	"github.com/charmbracelet/bubbles/list"
     tea "github.com/charmbracelet/bubbletea"
 )
 
-// func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-func (m Model) handleScreenInput(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch m.currScreenFocus {
@@ -36,12 +34,17 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (Model, tea.Cmd) {
 	// // m.viewport, cmd = m.viewport.Update(msg)
 	// // cmds = append(cmds, cmd)
 
-	// return m, tea.Batch(cmds...)
-
 	return m, cmd
 }
 
-func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// // Don't intercept keys when filtering is active
+	// if m.mainMenuList.FilterState() == list.Filtering {
+	// 	var cmd tea.Cmd
+	// 	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
+	// 	return m, cmd
+	// }
+
 	switch msg.String() {
 	case "enter":
 		item, ok := m.mainMenuList.SelectedItem().(menuItem)
@@ -56,14 +59,14 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (Model, tea.Cmd) {
 			m.viewTablesMenuList.ResetFilter()
 
 		case "Run queries":
+			var cmd tea.Cmd
+			return m, cmd
 			// TODO: Implement this
 		}
 	}
 
 	var cmd tea.Cmd
 	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
-	m.status.Count += 1
-	m.status.Message = fmt.Sprintf("mainMenuList %d", m.status.Count)
 	return m, cmd
 }
 
@@ -80,7 +83,14 @@ func (m Model) getTablesAsMenuItems() ([]list.Item) {
 	return menuItems
 }
 
-func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// // Don't intercept keys when filtering is active
+	// if m.viewTablesMenuList.FilterState() == list.Filtering {
+	// 	var cmd tea.Cmd
+	// 	m.viewTablesMenuList, cmd = m.viewTablesMenuList.Update(msg)
+	// 	return m, cmd
+	// }
+
 	// TODO:
 
 	var cmd tea.Cmd

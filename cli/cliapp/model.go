@@ -38,7 +38,7 @@ type Model struct {
 
 	// Elements of the right column
 	table table.Model
-	viewport viewport.Model
+	viewport viewport.Model // TODO: I think I don't need this
 
 	status StatusBarProps
 
@@ -79,7 +79,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	viewTablesMenuList.Title = "View tables"
 	viewTablesMenuList.InfiniteScrolling = true
 	viewTablesMenuList.SetShowStatusBar(false)
-	viewTablesMenuList.SetFilteringEnabled(false)
+	viewTablesMenuList.SetFilteringEnabled(true)
 
 	manageTableMenuItems := []list.Item{
 		menuItem{title: "View table", desc: "Show all the entries of the table"},
@@ -105,7 +105,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	status := StatusBarProps{
 		State: "green",
 		Message: "",
-		Count: 0,
 	}
 
 	return Model{
@@ -133,27 +132,23 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
-			if m.NoFilterState() {
+			if !m.filterState() {
 				return m, tea.Quit
 			}
 		case "ctrl+c":
 			return m, tea.Quit
 		case "esc":
-			if m.NoFilterState() {
+			if !m.filterState() {
 				return m, nil
 			}
 			// TODO: Implement history and go back to the previous screen
 			// TODO: If the history is empty, close the app
 		}
 
-		// m, cmd = m.handleScreenInput(msg)
 		return m.handleScreenInput(msg)
 
 	case tea.WindowSizeMsg:
@@ -180,16 +175,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	cmds = append(cmds, cmd)
+	if m.filterState() {
+		// m, cmd = m.updateFilteredScreen(msg)
+		return m.updateFilteredScreen(msg)
+	}
 
-	return m, tea.Batch(cmds...)
+	return m, nil
 }
 
 func (m Model) View() string {
 	if !m.ready {
 		return "Intializing the CLI app..."
 	}
-
 	leftColumn := m.RenderLeftColumn()
 	rightColumn := m.RenderRightColumn()
 
@@ -205,8 +202,21 @@ func (m Model) View() string {
 	return content + "\n" + status
 }
 
-func (m Model) NoFilterState() bool {
-	// TODO: Take into account the different views that can be in the filtering state
-	return m.mainMenuList.FilterState() != list.Filtering &&
-		m.viewTablesMenuList.FilterState() != list.Filtering
+func (m Model) filterState() bool {
+	// TODO: Take into account the different screens that can be in the filtering state
+	return m.mainMenuList.FilterState() == list.Filtering ||
+		m.viewTablesMenuList.FilterState() == list.Filtering
+}
+
+func (m Model) updateFilteredScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// TODO: Take into account the different screens that can be in the filtering state
+	var cmd tea.Cmd
+	switch m.currScreenFocus {
+	case MainMenuScreen:
+		m.mainMenuList, cmd = m.mainMenuList.Update(msg)
+	case ViewTablesScreen:
+		m.viewTablesMenuList, cmd = m.viewTablesMenuList.Update(msg)
+	}
+
+	return m, cmd
 }
