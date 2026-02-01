@@ -20,6 +20,7 @@ type StatusBarProps struct {
 	State StatusBarState
 	Message string
 	Width int
+	Count int
 }
 
 var (

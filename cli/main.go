@@ -36,10 +36,9 @@ func main() {
 
 	// Run the main CLI app logic
 	go func() {
-		// TODO: Initialize Bubbletea
 		model := cliapp.NewModel(ctx, backend)
-		p := tea.NewProgram(model)
-		// p := tea.NewProgram(model, tea.WithAltScreen())
+		// p := tea.NewProgram(model)
+		p := tea.NewProgram(model, tea.WithAltScreen())
 		if _, err := p.Run(); err != nil {
 			errCh <- err
 			return

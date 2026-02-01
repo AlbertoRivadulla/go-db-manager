@@ -25,14 +25,15 @@ const (
 )
 
 type Model struct {
-	currScreen Screen
+	currScreenFocus Screen
+	currScreenLeft Screen
+	currScreenRight Screen // TODO: I think I don't need this
 
 	// Elements of the left column
 	mainMenuList list.Model
 	viewTablesMenuList list.Model
 	manageTableMenuList list.Model
 	runQueriesMenuList list.Model
-	cursor int
 	// TODO: Menu for applying the rules
 
 	// Elements of the right column
@@ -72,7 +73,13 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	mainMenuList.Title = "Main menu"
 	mainMenuList.InfiniteScrolling = true
 	mainMenuList.SetShowStatusBar(false)
-	mainMenuList.SetFilteringEnabled(false)
+	mainMenuList.SetFilteringEnabled(true)
+
+	viewTablesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	viewTablesMenuList.Title = "View tables"
+	viewTablesMenuList.InfiniteScrolling = true
+	viewTablesMenuList.SetShowStatusBar(false)
+	viewTablesMenuList.SetFilteringEnabled(false)
 
 	manageTableMenuItems := []list.Item{
 		menuItem{title: "View table", desc: "Show all the entries of the table"},
@@ -80,11 +87,17 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		menuItem{title: "Edit entry", desc: "Select an entry and edit or remove it"},
 	}
 	manageTableMenuList := list.New(manageTableMenuItems, list.NewDefaultDelegate(), 0, 0)
-	manageTableMenuList.Title = "Main menu"
+	manageTableMenuList.Title = "Manage table - ???? (Table title)"
 	manageTableMenuList.InfiniteScrolling = true
 	manageTableMenuList.SetShowStatusBar(false)
-	manageTableMenuList.SetFilteringEnabled(true)
+	manageTableMenuList.SetFilteringEnabled(false)
 	// TODO: Set the title after selecting a table
+
+	runQueriesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	runQueriesMenuList.Title = "Run query"
+	runQueriesMenuList.InfiniteScrolling = true
+	runQueriesMenuList.SetShowStatusBar(false)
+	runQueriesMenuList.SetFilteringEnabled(false)
 
 	// Viewport for text results
 	viewport := viewport.New(0, 0)
@@ -92,13 +105,18 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	status := StatusBarProps{
 		State: "green",
 		Message: "",
+		Count: 0,
 	}
 
 	return Model{
-		currScreen: MainMenuScreen,
+		currScreenFocus: MainMenuScreen,
+		currScreenLeft: MainMenuScreen,
+		currScreenRight: ViewTablesScreen,
 
 		mainMenuList: mainMenuList,
+		viewTablesMenuList: viewTablesMenuList,
 		manageTableMenuList: manageTableMenuList,
+		runQueriesMenuList: runQueriesMenuList,
 
 		viewport: viewport,
 
@@ -120,21 +138,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// TODO: Check if the current screen is in filter state, and ignore the keys
-		// Modify this
-		if m.mainMenuList.FilterState() == list.Filtering {
-			break
-		}
-
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "q":
+			if m.NoFilterState() {
+				return m, tea.Quit
+			}
+		case "ctrl+c":
 			return m, tea.Quit
-
-		case "enter":
-			// TODO: Manage interaction with the different menus
-			m.status.Message = "pressed enter"
-			m.status.State = "red"
+		case "esc":
+			if m.NoFilterState() {
+				return m, nil
+			}
+			// TODO: Implement history and go back to the previous screen
+			// TODO: If the history is empty, close the app
 		}
+
+		// m, cmd = m.handleScreenInput(msg)
+		return m.handleScreenInput(msg)
 
 	case tea.WindowSizeMsg:
 		// handle resize if needed
@@ -147,7 +167,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.rightWidth = m.width - m.leftWidth - 2
 
 		m.mainMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
+		m.viewTablesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.manageTableMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
+		m.runQueriesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.viewport.Width = m.rightWidth
 		m.viewport.Height = m.mainItemsHeight
 
@@ -158,14 +180,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// TODO: Update the currently active item in the left
-	// Modify this
-	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
-	cmds = append(cmds, cmd)
-
-	// TODO: Update the currently active item in the right
-	// Modify this
-	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
@@ -176,21 +190,8 @@ func (m Model) View() string {
 		return "Intializing the CLI app..."
 	}
 
-	// Define styles
-    columnStyle := lipgloss.NewStyle().
-        Padding(1)
-
-    leftColumnStyle := columnStyle.Width(int(float64(m.width) * 0.4))
-
-    rightColumnStyle := columnStyle.Width(m.width - int(float64(m.width)*0.4) - 2)
-
-	// TODO: Render left column
-	// Modify this
-    leftColumn := leftColumnStyle.Render(m.mainMenuList.View())
-
-	// TODO: Render left column
-	// Modify this
-    rightColumn := rightColumnStyle.Render(m.viewport.View())
+	leftColumn := m.RenderLeftColumn()
+	rightColumn := m.RenderRightColumn()
 
 	// Combine the two columns
 	content := lipgloss.JoinHorizontal(
@@ -202,4 +203,10 @@ func (m Model) View() string {
 	status := m.status.Render()
 
 	return content + "\n" + status
+}
+
+func (m Model) NoFilterState() bool {
+	// TODO: Take into account the different views that can be in the filtering state
+	return m.mainMenuList.FilterState() != list.Filtering &&
+		m.viewTablesMenuList.FilterState() != list.Filtering
 }

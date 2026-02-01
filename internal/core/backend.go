@@ -27,7 +27,6 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error opening the SQLite store: %w", err)
 	}
-	fmt.Printf("Created database\n")
 
 	// // NOTE: Example of adding data to the database
 	// _, err = store.RunQuery(`
@@ -110,6 +109,14 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	return &backend, nil
 }
 
+func (backend *Backend) GetTableSpecs() []core.TableSpec {
+	return backend.tableSpecs
+}
+
+func (backend *Backend) Cleanup() {
+	backend.store.db.Close()
+}
+
 func (backend *Backend) parseSpecs(specsDir *string) error {
 	entries, err := os.ReadDir(*specsDir)
 	if err != nil {
@@ -150,10 +157,6 @@ func (backend *Backend) parseSpecs(specsDir *string) error {
 	}
 
 	return nil
-}
-
-func (backend *Backend) Cleanup() {
-	backend.store.db.Close()
 }
 
 type Validatable interface {

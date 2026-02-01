@@ -11,6 +11,7 @@ type TableSpec struct {
 
 type Table struct {
 	Name string `yaml:"name"`
+	Description string `yaml:"desc"`
 	Schema string `yaml:"schema"`
 	PrimaryKey string `yaml:"primary_key"`
 	ForeignKeys []ForeignKey `yaml:"foreign_keys"`
