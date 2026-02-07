@@ -3,10 +3,10 @@ package cliapp
 import (
 	"fmt"
 
-    "github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/list"
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -75,14 +75,14 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) getTablesAsMenuItems() ([]list.Item) {
+func (m Model) getTablesAsMenuItems() []list.Item {
 	tableSpecs := m.backend.GetTableSpecs()
 
 	menuItems := make([]list.Item, len(tableSpecs))
 	for i, spec := range tableSpecs {
 		menuItems[i] = menuItem{
 			title: spec.Table.Name,
-			desc: spec.Table.Description,
+			desc:  spec.Table.Description,
 		}
 	}
 	return menuItems
@@ -114,6 +114,11 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Set the style of the table to plain
 		s := table.DefaultStyles()
 		s.Selected = lipgloss.NewStyle()
+		s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
 		m.table.SetStyles(s)
 
 		// Get the columns in the table
@@ -172,6 +177,11 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m.currScreenFocus = TableScreen
 			// Set the style of the selected row when navigating it
 			s := table.DefaultStyles()
+			s.Header = s.Header.
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240")).
+			BorderBottom(true).
+			Bold(false)
 			s.Selected = s.Selected.
 				Foreground(lipgloss.Color("229")).
 				Background(lipgloss.Color("57")).

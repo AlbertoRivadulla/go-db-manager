@@ -6,10 +6,10 @@ import (
 	"carmaintenance/internal/core"
 
 	"github.com/charmbracelet/bubbles/list"
-    "github.com/charmbracelet/bubbles/table"
-    "github.com/charmbracelet/bubbles/viewport"
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Screen int
@@ -26,36 +26,36 @@ const (
 
 type Model struct {
 	currScreenFocus Screen
-	currScreenLeft Screen
+	currScreenLeft  Screen
 	currScreenRight Screen // TODO: I think I don't need this
 
 	// Elements of the left column
-	mainMenuList list.Model
-	viewTablesMenuList list.Model
+	mainMenuList        list.Model
+	viewTablesMenuList  list.Model
 	manageTableMenuList list.Model
-	runQueriesMenuList list.Model
+	runQueriesMenuList  list.Model
 	// TODO: Menu for applying the rules
 
 	// Elements of the right column
-	table table.Model
+	table    table.Model
 	viewport viewport.Model // TODO: I think I don't need this
 
 	currTableName string
 	currTableDesc string
-	showTable bool
-	status StatusBarProps
+	showTable     bool
+	status        StatusBarProps
 
-	width int
-	leftWidth int
-	rightWidth int
-	height int
+	width           int
+	leftWidth       int
+	rightWidth      int
+	height          int
 	mainItemsHeight int
 
 	ready bool
 
 	log []string
 
-	ctx context.Context
+	ctx     context.Context
 	backend *core.Backend
 }
 
@@ -63,7 +63,7 @@ type menuItem struct {
 	title, desc string
 }
 
-func (i menuItem) Title() string { return i.title }
+func (i menuItem) Title() string       { return i.title }
 func (i menuItem) Description() string { return i.desc }
 func (i menuItem) FilterValue() string { return i.title }
 
@@ -117,11 +117,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		BorderForeground(lipgloss.Color("240")).
 		BorderBottom(true).
 		Bold(false)
-	// TODO: Set the style of the selected row when navigating it
-	// s.Selected = s.Selected.
-	// 	Foreground(lipgloss.Color("229")).
-	// 	Background(lipgloss.Color("57")).
-	// 	Bold(false)
 	s.Selected = lipgloss.NewStyle()
 	dataTable.SetStyles(s)
 
@@ -129,27 +124,27 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	viewport := viewport.New(0, 0)
 
 	status := StatusBarProps{
-		State: "green",
+		State:   "green",
 		Message: "",
 	}
 
 	return Model{
 		currScreenFocus: MainMenuScreen,
-		currScreenLeft: MainMenuScreen,
+		currScreenLeft:  MainMenuScreen,
 		currScreenRight: ViewTablesScreen,
 
-		mainMenuList: mainMenuList,
-		viewTablesMenuList: viewTablesMenuList,
+		mainMenuList:        mainMenuList,
+		viewTablesMenuList:  viewTablesMenuList,
 		manageTableMenuList: manageTableMenuList,
-		runQueriesMenuList: runQueriesMenuList,
+		runQueriesMenuList:  runQueriesMenuList,
 
 		viewport: viewport,
-		table: dataTable,
+		table:    dataTable,
 
-		status: status,
+		status:    status,
 		showTable: false,
 
-		ctx: ctx,
+		ctx:     ctx,
 		backend: backend,
 	}
 }

@@ -10,34 +10,34 @@ type TableSpec struct {
 }
 
 type Table struct {
-	Name string `yaml:"name"`
-	Description string `yaml:"desc"`
-	Schema string `yaml:"schema"`
+	Name        string       `yaml:"name"`
+	Description string       `yaml:"desc"`
+	Schema      string       `yaml:"schema"`
 	ForeignKeys []ForeignKey `yaml:"foreign_keys"`
-	Columns []Column `yaml:"columns"`
+	Columns     []Column     `yaml:"columns"`
 }
 
 type ForeignKey struct {
-	Column string `yaml:"column"`
+	Column     string    `yaml:"column"`
 	References Reference `yaml:"references"`
-	OnDelete string `yaml:"on_delete"`
-	OnUpdate string `yaml:"on_update"`
+	OnDelete   string    `yaml:"on_delete"`
+	OnUpdate   string    `yaml:"on_update"`
 }
 
 type Reference struct {
-	Table string `yaml:"table"`
+	Table  string `yaml:"table"`
 	Column string `yaml:"column"`
 }
 
 type Column struct {
-	Name string `yaml:"name"`
-	Type string `yaml:"type"`
-	AutoIncrement bool `yaml:"auto_increment"`
-	PrimaryKey bool `yaml:"primary_key"`
-	Nullable bool `yaml:"nullable"`
-	Default *string `yaml:"default"`
-	Check *string `yaml:"check"`
-	Comment string `yaml:"comment"`
+	Name          string  `yaml:"name"`
+	Type          string  `yaml:"type"`
+	AutoIncrement bool    `yaml:"auto_increment"`
+	PrimaryKey    bool    `yaml:"primary_key"`
+	Nullable      bool    `yaml:"nullable"`
+	Default       *string `yaml:"default"`
+	Check         *string `yaml:"check"`
+	Comment       string  `yaml:"comment"`
 }
 
 func (s TableSpec) Validate() error {

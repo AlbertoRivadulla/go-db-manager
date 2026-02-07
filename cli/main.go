@@ -3,15 +3,15 @@ package main
 import (
 	// "bufio"
 	"context"
-	"fmt"
 	"flag"
+	"fmt"
 	// "log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"carmaintenance/internal/core"
 	"carmaintenance/cli/cliapp"
+	"carmaintenance/internal/core"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

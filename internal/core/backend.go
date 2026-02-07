@@ -13,8 +13,8 @@ import (
 )
 
 type Backend struct {
-	Store SQLiteStore
-	tableSpecs []core.TableSpec
+	Store         SQLiteStore
+	tableSpecs    []core.TableSpec
 	mapTableSpecs map[string]*core.TableSpec
 	// TODO: queries
 	// TODO: rules
@@ -85,7 +85,7 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 	// 	fmt.Println("")
 	// }
 
-	backend := Backend {
+	backend := Backend{
 		Store: *store,
 	}
 

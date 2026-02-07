@@ -1,26 +1,26 @@
 package cliapp
 
 import (
-    "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type StatusBarState string
 
 const (
-	StatusBarStateOk StatusBarState = "green"
+	StatusBarStateOk  StatusBarState = "green"
 	StatusBarStateErr StatusBarState = "red"
 )
 
 var styleMapByColor = map[StatusBarState]lipgloss.Style{
 	StatusBarStateOk:  statusStyleGreen,
-	StatusBarStateErr:    statusStyleErr,
+	StatusBarStateErr: statusStyleErr,
 }
 
 type StatusBarProps struct {
-	State StatusBarState
+	State   StatusBarState
 	Message string
-	Width int
-	Count int
+	Width   int
+	Count   int
 }
 
 var (
