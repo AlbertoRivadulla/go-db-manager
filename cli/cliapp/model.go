@@ -22,12 +22,14 @@ const (
 	EditEntryScreen
 	SelectQueryScreen
 	TableScreen
+	None
 )
 
 type Model struct {
 	currScreenFocus Screen
 	currScreenLeft  Screen
 	currScreenRight Screen // TODO: I think I don't need this
+	screenHistory   []Screen
 
 	// Elements of the left column
 	mainMenuList        list.Model
@@ -83,7 +85,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	viewTablesMenuList.Styles.Title = titleStyle
 	viewTablesMenuList.Title = "View tables"
 	viewTablesMenuList.InfiniteScrolling = true
-	viewTablesMenuList.SetShowStatusBar(false)
+	viewTablesMenuList.SetShowStatusBar(true)
 	viewTablesMenuList.SetFilteringEnabled(true)
 
 	manageTableMenuItems := []list.Item{
@@ -97,7 +99,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	manageTableMenuList.InfiniteScrolling = true
 	manageTableMenuList.SetShowStatusBar(false)
 	manageTableMenuList.SetFilteringEnabled(false)
-	// TODO: Set the title after selecting a table
 
 	runQueriesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
 	runQueriesMenuList.Styles.Title = titleStyle
@@ -166,7 +167,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "esc":
 			if !m.filterState() {
-				return m, nil
+				return m.NavigateBack(), nil
+				// return m, nil
 			}
 			// TODO: Implement history and go back to the previous screen
 			// TODO: If the history is empty, close the app
@@ -193,7 +195,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.status.Width = m.width
 
-		m.table.SetHeight(m.height - 6)
+		m.table.SetHeight(m.height - 10)
 
 		if !m.ready {
 			m.ready = true
@@ -201,7 +203,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.filterState() {
-		// m, cmd = m.updateFilteredScreen(msg)
 		return m.updateFilteredScreen(msg)
 	}
 

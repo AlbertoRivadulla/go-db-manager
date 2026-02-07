@@ -49,9 +49,6 @@ func (m Model) RenderRightColumn() string {
 			Padding(1).
 			Width(m.rightWidth)
 
-		// columnStyle := lipgloss.NewStyle().
-		//     Padding(1).Width(m.leftWidth)
-
 		return containerStyle.Render(content)
 	}
 

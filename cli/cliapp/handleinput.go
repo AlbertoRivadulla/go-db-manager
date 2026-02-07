@@ -32,7 +32,7 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// var cmds []tea.Cmd
 	// // // TODO: Update the currently active item in the left
 	// // // Modify this
-	// m.mainMenuList, cmd = m.mainMenuList.Update(msg)
+	// m.m1ainMenuList, cmd = m.mainMenuList.Update(msg)
 	// cmds = append(cmds, cmd)
 	// //
 	// // // TODO: Update the currently active item in the right
@@ -59,9 +59,7 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		switch item.title {
 		case "Manage tables":
-			m.currScreenFocus = ViewTablesScreen
-			m.currScreenLeft = ViewTablesScreen
-			m.viewTablesMenuList.SetItems(m.getTablesAsMenuItems())
+			return m.navigateTo(m.currScreenLeft, ViewTablesScreen), nil
 
 		case "Run queries":
 			var cmd tea.Cmd
@@ -73,19 +71,6 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
 	return m, cmd
-}
-
-func (m Model) getTablesAsMenuItems() []list.Item {
-	tableSpecs := m.backend.GetTableSpecs()
-
-	menuItems := make([]list.Item, len(tableSpecs))
-	for i, spec := range tableSpecs {
-		menuItems[i] = menuItem{
-			title: spec.Table.Name,
-			desc:  spec.Table.Description,
-		}
-	}
-	return menuItems
 }
 
 func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -103,60 +88,14 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		m.currScreenFocus = ManageTableScreen
-		m.currScreenLeft = ManageTableScreen
-		// TODO: Do I need to set m.currScreenRight?
-		m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", item.title)
-		m.currTableName = item.title
-		m.currTableDesc = item.desc
-		m.showTable = true
-
-		// Set the style of the table to plain
-		s := table.DefaultStyles()
-		s.Selected = lipgloss.NewStyle()
-		s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-		m.table.SetStyles(s)
-
-		// Get the columns in the table
-		columns, err := m.backend.GetColumnsInTable(item.title)
+		err := m.setupTable(item.title, item.desc)
 		if err != nil {
 			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error reading columns: %s", err)
+			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", item.title, err)
 			return m, nil
 		}
 
-		// Load the data from the table
-		result, err := m.backend.GetEntriesInTable(item.title)
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error reading table entries: %s", err)
-			return m, nil
-		}
-		m.status.State = StatusBarStateOk
-		m.status.Message = fmt.Sprintf("Read table %v", item.title)
-
-		tableColumns := make([]table.Column, len(columns))
-		for i, col := range columns {
-			tableColumns[i] = table.Column{
-				Title: col,
-				Width: len(col) + 2,
-			}
-		}
-
-		tableRows := make([]table.Row, len(result))
-
-		if len(result) > 0 {
-			for i, row := range result {
-				tableRows[i] = row
-			}
-		}
-
-		m.table.SetColumns(tableColumns)
-		m.table.SetRows(tableRows)
+		return m.navigateTo(m.currScreenLeft, ManageTableScreen), nil
 	}
 
 	var cmd tea.Cmd
@@ -174,19 +113,7 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 
 		switch item.title {
 		case "View table":
-			m.currScreenFocus = TableScreen
-			// Set the style of the selected row when navigating it
-			s := table.DefaultStyles()
-			s.Header = s.Header.
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("240")).
-			BorderBottom(true).
-			Bold(false)
-			s.Selected = s.Selected.
-				Foreground(lipgloss.Color("229")).
-				Background(lipgloss.Color("57")).
-				Bold(false)
-			m.table.SetStyles(s)
+			return m.navigateTo(m.currScreenLeft, TableScreen), nil
 
 		case "Add entry":
 			var cmd tea.Cmd
@@ -218,4 +145,113 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
 	return m, cmd
+}
+
+func (m Model) NavigateBack() tea.Model {
+	if len(m.screenHistory) > 0 {
+		screen := m.screenHistory[len(m.screenHistory) - 1]
+		m.screenHistory = m.screenHistory[:len(m.screenHistory) - 1]
+		return m.navigateTo(None, screen)
+	}
+
+	return m
+}
+
+func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
+	if fromScreen != None {
+		m.screenHistory = append(m.screenHistory, fromScreen)
+	}
+
+	m.currScreenFocus = toScreen
+
+	switch toScreen {
+	case MainMenuScreen:
+		m.currScreenLeft = toScreen
+	case ViewTablesScreen:
+		m.currScreenLeft = toScreen
+		m.viewTablesMenuList.SetItems(m.getTablesAsMenuItems())
+	case ManageTableScreen:
+		m.currScreenLeft = toScreen
+
+		// Set the style of the table to plain
+		s := table.DefaultStyles()
+		s.Selected = lipgloss.NewStyle()
+		s.Header = s.Header.
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240")).
+			BorderBottom(true).
+			Bold(false)
+		m.table.SetStyles(s)
+	case TableScreen:
+		// Set the style of the selected row when navigating it
+		s := table.DefaultStyles()
+		s.Header = s.Header.
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240")).
+			BorderBottom(true).
+			Bold(false)
+		s.Selected = s.Selected.
+			Foreground(lipgloss.Color("229")).
+			Background(lipgloss.Color("57")).
+			Bold(false)
+		m.table.SetStyles(s)
+	}
+
+	return m
+}
+
+func (m Model) getTablesAsMenuItems() []list.Item {
+	tableSpecs := m.backend.GetTableSpecs()
+
+	menuItems := make([]list.Item, len(tableSpecs))
+	for i, spec := range tableSpecs {
+		menuItems[i] = menuItem{
+			title: spec.Table.Name,
+			desc:  spec.Table.Description,
+		}
+	}
+	return menuItems
+}
+
+func (m *Model) setupTable(tableName string, tableDesc string) error {
+	// TODO: Do I need to set m.currScreenRight?
+	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", tableName)
+	m.currTableName = tableName
+	m.currTableDesc = tableDesc
+	m.showTable = true
+
+	// Get the columns in the table
+	columns, err := m.backend.GetColumnsInTable(tableName)
+	if err != nil {
+		return fmt.Errorf("Error reading columns: %s", err)
+	}
+
+	// Load the data from the table
+	result, err := m.backend.GetEntriesInTable(tableName)
+	if err != nil {
+		return fmt.Errorf("Error reading table entries: %s", err)
+	}
+	m.status.State = StatusBarStateOk
+	m.status.Message = fmt.Sprintf("Read table %v", tableName)
+
+	tableColumns := make([]table.Column, len(columns))
+	for i, col := range columns {
+		tableColumns[i] = table.Column{
+			Title: col,
+			Width: len(col) + 2,
+		}
+	}
+
+	tableRows := make([]table.Row, len(result))
+
+	if len(result) > 0 {
+		for i, row := range result {
+			tableRows[i] = row
+		}
+	}
+
+	m.table.SetColumns(tableColumns)
+	m.table.SetRows(tableRows)
+
+	return nil
 }
