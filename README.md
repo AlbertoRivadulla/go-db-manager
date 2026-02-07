@@ -1,12 +1,14 @@
-# Car maintenance tracker
+# Database manager app
+
+A CLI app to manage a database written in Go, using the library Bubbletea.
 
 Build the CLI app with
 ```bash
-go build -o carmaintenance-cli cli/main.go
+go build -o database-cli cli/main.go
 ```
 and run it using
 ```bash
-./carmaintenance-cli -dbpath <database_path> -specs <specs_dir>
+./database-cli -dbpath <database_path> -specs <specs_dir>
 ```
 where `<specs_dir>` is a directory with YAML files that specify the different tables in the database, and queries to run on them. This contains the following subdirectories and files (there can be more than one file in each subdirectory):
 ```
@@ -63,5 +65,4 @@ The files in these directories have the following contents:
     ```YAML
     # TODO:
     ```
-
 
