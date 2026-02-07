@@ -6,6 +6,7 @@ import (
     "github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/list"
     tea "github.com/charmbracelet/bubbletea"
+    "github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -110,6 +111,11 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.currTableDesc = item.desc
 		m.showTable = true
 
+		// Set the style of the table to plain
+		s := table.DefaultStyles()
+		s.Selected = lipgloss.NewStyle()
+		m.table.SetStyles(s)
+
 		// Get the columns in the table
 		columns, err := m.backend.GetColumnsInTable(item.title)
 		if err != nil {
@@ -164,6 +170,13 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		switch item.title {
 		case "View table":
 			m.currScreenFocus = TableScreen
+			// Set the style of the selected row when navigating it
+			s := table.DefaultStyles()
+			s.Selected = s.Selected.
+				Foreground(lipgloss.Color("229")).
+				Background(lipgloss.Color("57")).
+				Bold(false)
+			m.table.SetStyles(s)
 
 		case "Add entry":
 			var cmd tea.Cmd

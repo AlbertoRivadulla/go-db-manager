@@ -117,10 +117,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		BorderForeground(lipgloss.Color("240")).
 		BorderBottom(true).
 		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
+	// TODO: Set the style of the selected row when navigating it
+	// s.Selected = s.Selected.
+	// 	Foreground(lipgloss.Color("229")).
+	// 	Background(lipgloss.Color("57")).
+	// 	Bold(false)
+	s.Selected = lipgloss.NewStyle()
 	dataTable.SetStyles(s)
 
 	// Viewport for text results
