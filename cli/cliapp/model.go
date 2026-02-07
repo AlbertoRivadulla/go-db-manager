@@ -37,6 +37,7 @@ type Model struct {
 	viewTablesMenuList  list.Model
 	manageTableMenuList list.Model
 	runQueriesMenuList  list.Model
+	addEntryForm        EntryForm
 	// TODO: Menu for applying the rules
 
 	// Elements of the right column
@@ -137,7 +138,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		table.WithFocused(true),
 		table.WithHeight(10), // TODO: Set this
 	)
-
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
@@ -152,6 +152,9 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	// runQueriesMenuList.AdditionalFullHelpKeys = func() []key.Binding {
 	// 	return []key.Binding{backKey}
 	// }
+
+	addEntryForm := NewEntryForm()
+	addEntryForm.TitleStyle = titleStyle
 
 	// Viewport for text results
 	viewport := viewport.New(0, 0)
@@ -170,6 +173,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		viewTablesMenuList:  viewTablesMenuList,
 		manageTableMenuList: manageTableMenuList,
 		runQueriesMenuList:  runQueriesMenuList,
+		addEntryForm:        addEntryForm,
 
 		viewport: viewport,
 		table:    dataTable,

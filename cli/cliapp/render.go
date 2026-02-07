@@ -19,7 +19,8 @@ func (m Model) RenderLeftColumn() string {
 	case ManageTableScreen:
 		return columnStyle.Render(m.manageTableMenuList.View())
 	case AddEntryScreen:
-		// TODO:
+		return columnStyle.Render(m.addEntryForm.View())
+
 	case EditEntryScreen:
 		// TODO:
 	case SelectQueryScreen:

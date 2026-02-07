@@ -45,9 +45,21 @@ var (
 			Padding(0, 1)
 
 	helpStyle = lipgloss.NewStyle().
-			// Faint(true).
 			Foreground(colorGray).
 			Padding(0, 1)
+
+	tableSelectedItemHighlight = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("229")).
+			Background(lipgloss.Color("57")).
+			Bold(false)
+
+	// Style for the text forms
+	textFocusedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("229")).
+			Background(lipgloss.Color("57")).
+			Bold(false)
+	textBlurredStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241"))
 
 	quitKey = key.NewBinding(
 		key.WithKeys("q"),

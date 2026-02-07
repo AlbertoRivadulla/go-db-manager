@@ -139,6 +139,15 @@ func (backend *Backend) GetColumnsInTable(table string) ([]string, error) {
 	return columns, nil
 }
 
+func (backend *Backend) GetColumnSpecsInTable(table string) ([]core.Column, error) {
+	tableSpec, ok := backend.mapTableSpecs[table]
+	if !ok {
+		return nil, fmt.Errorf("table %s not found", table)
+	}
+
+	return tableSpec.Table.Columns, nil
+}
+
 func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
 	query := backend.mapTableSpecs[table].Table.QueryGetAllEntries()
 	result, err := backend.Store.QueryTo2DimArray(query)

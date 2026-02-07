@@ -89,12 +89,8 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		err := m.setupTable(item.title, item.desc)
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", item.title, err)
-			return m, nil
-		}
+		m.currTableName = item.title
+		m.currTableDesc = item.desc
 
 		return m.navigateTo(m.currScreenLeft, ManageTableScreen), nil
 	}
@@ -117,9 +113,7 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			return m.navigateTo(m.currScreenLeft, TableScreen), nil
 
 		case "Add entry":
-			var cmd tea.Cmd
-			return m, cmd
-			// TODO: Implement this
+			return m.navigateTo(m.currScreenLeft, AddEntryScreen), nil
 
 		case "Edit entry":
 			var cmd tea.Cmd
@@ -150,8 +144,8 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) NavigateBack() tea.Model {
 	if len(m.screenHistory) > 0 {
-		screen := m.screenHistory[len(m.screenHistory) - 1]
-		m.screenHistory = m.screenHistory[:len(m.screenHistory) - 1]
+		screen := m.screenHistory[len(m.screenHistory)-1]
+		m.screenHistory = m.screenHistory[:len(m.screenHistory)-1]
 		return m.navigateTo(None, screen)
 	}
 
@@ -174,6 +168,13 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 	case ManageTableScreen:
 		m.currScreenLeft = toScreen
 
+		err := m.setupTable()
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
+			return m
+		}
+
 		// Set the style of the table to plain
 		s := table.DefaultStyles()
 		s.Selected = lipgloss.NewStyle()
@@ -191,11 +192,18 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 			BorderForeground(lipgloss.Color("240")).
 			BorderBottom(true).
 			Bold(false)
-		s.Selected = s.Selected.
-			Foreground(lipgloss.Color("229")).
-			Background(lipgloss.Color("57")).
-			Bold(false)
+		s.Selected = tableSelectedItemHighlight
 		m.table.SetStyles(s)
+
+	case AddEntryScreen:
+		m.currScreenLeft = toScreen
+
+		err := m.setupEntryForm()
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error setting form for table %s: %s", m.currTableName, err)
+			return m
+		}
 	}
 
 	return m
@@ -214,26 +222,24 @@ func (m Model) getTablesAsMenuItems() []list.Item {
 	return menuItems
 }
 
-func (m *Model) setupTable(tableName string, tableDesc string) error {
+func (m *Model) setupTable() error {
 	// TODO: Do I need to set m.currScreenRight?
-	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", tableName)
-	m.currTableName = tableName
-	m.currTableDesc = tableDesc
+	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", m.currTableName)
 	m.showTable = true
 
 	// Get the columns in the table
-	columns, err := m.backend.GetColumnsInTable(tableName)
+	columns, err := m.backend.GetColumnsInTable(m.currTableName)
 	if err != nil {
-		return fmt.Errorf("Error reading columns: %s", err)
+		return fmt.Errorf("Error reading columns: %w", err)
 	}
 
 	// Load the data from the table
-	result, err := m.backend.GetEntriesInTable(tableName)
+	result, err := m.backend.GetEntriesInTable(m.currTableName)
 	if err != nil {
-		return fmt.Errorf("Error reading table entries: %s", err)
+		return fmt.Errorf("Error reading table entries: %w", err)
 	}
 	m.status.State = StatusBarStateOk
-	m.status.Message = fmt.Sprintf("Read table %v", tableName)
+	m.status.Message = fmt.Sprintf("Read table %v", m.currTableName)
 
 	tableColumns := make([]table.Column, len(columns))
 	for i, col := range columns {
@@ -255,6 +261,36 @@ func (m *Model) setupTable(tableName string, tableDesc string) error {
 	m.table.SetRows(tableRows)
 
 	m.currTableNrEntries = len(tableRows)
+
+	return nil
+}
+
+func (m *Model) setupEntryForm() error {
+	columnSpecs, err := m.backend.GetColumnSpecsInTable(m.currTableName)
+	if err != nil {
+		return fmt.Errorf("Error getting the column specs for table %s: %w", m.currTableName, err)
+	}
+
+	m.addEntryForm.Cursor = 0
+	m.addEntryForm.Title = fmt.Sprintf("Add entry to the table %s", m.currTableName)
+
+	// Populate the elements in the form
+	// m.addEntryForm.Fields = make([]FormField, len(columnSpecs))
+	m.addEntryForm.Fields = []FormField{}
+
+	for _, colSpec := range columnSpecs {
+		if colSpec.PrimaryKey {
+			continue
+		}
+
+		var field FormField
+		field.Label = colSpec.Name
+		field.DataType = colSpec.Type
+		field.DefaultValue = ""
+		field.Required = (!colSpec.Nullable)
+
+		m.addEntryForm.Fields = append(m.addEntryForm.Fields, field)
+	}
 
 	return nil
 }
