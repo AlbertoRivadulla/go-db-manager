@@ -1,6 +1,7 @@
 package cliapp
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -32,6 +33,7 @@ var (
 	blueStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorBlue)
+
 	titleStyle = lipgloss.NewStyle().
 			Background(lipgloss.Color("62")).
 			Foreground(lipgloss.Color("230")).
@@ -41,4 +43,24 @@ var (
 			Foreground(lipgloss.Color("241")).
 			Italic(true).
 			Padding(0, 1)
+
+	helpStyle = lipgloss.NewStyle().
+			// Faint(true).
+			Foreground(colorGray).
+			Padding(0, 1)
+
+	quitKey = key.NewBinding(
+		key.WithKeys("q"),
+		key.WithHelp("q", "quit"),
+	)
+
+	backKey = key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "go back"),
+	)
+
+	selectKey = key.NewBinding(
+		key.WithKeys("enter", "o"),
+		key.WithHelp("enter/o", "select"),
+	)
 )

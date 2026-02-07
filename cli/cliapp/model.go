@@ -5,6 +5,7 @@ import (
 
 	"carmaintenance/internal/core"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -42,10 +43,11 @@ type Model struct {
 	table    table.Model
 	viewport viewport.Model // TODO: I think I don't need this
 
-	currTableName string
-	currTableDesc string
-	showTable     bool
-	status        StatusBarProps
+	currTableName      string
+	currTableDesc      string
+	currTableNrEntries int
+	showTable          bool
+	status             StatusBarProps
 
 	width           int
 	leftWidth       int
@@ -80,6 +82,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	mainMenuList.InfiniteScrolling = true
 	mainMenuList.SetShowStatusBar(false)
 	mainMenuList.SetFilteringEnabled(false)
+	mainMenuList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
+	mainMenuList.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
 
 	viewTablesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
 	viewTablesMenuList.Styles.Title = titleStyle
@@ -87,6 +95,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	viewTablesMenuList.InfiniteScrolling = true
 	viewTablesMenuList.SetShowStatusBar(true)
 	viewTablesMenuList.SetFilteringEnabled(true)
+	viewTablesMenuList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
+	viewTablesMenuList.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
 
 	manageTableMenuItems := []list.Item{
 		menuItem{title: "View table", desc: "Show all the entries of the table"},
@@ -99,6 +113,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	manageTableMenuList.InfiniteScrolling = true
 	manageTableMenuList.SetShowStatusBar(false)
 	manageTableMenuList.SetFilteringEnabled(false)
+	manageTableMenuList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
+	manageTableMenuList.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
 
 	runQueriesMenuList := list.New(nil, list.NewDefaultDelegate(), 0, 0)
 	runQueriesMenuList.Styles.Title = titleStyle
@@ -106,6 +126,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	runQueriesMenuList.InfiniteScrolling = true
 	runQueriesMenuList.SetShowStatusBar(false)
 	runQueriesMenuList.SetFilteringEnabled(false)
+	runQueriesMenuList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
+	runQueriesMenuList.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{backKey, selectKey}
+	}
 
 	dataTable := table.New(
 		table.WithFocused(true),
@@ -120,6 +146,12 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		Bold(false)
 	s.Selected = lipgloss.NewStyle()
 	dataTable.SetStyles(s)
+	// runQueriesMenuList.AdditionalShortHelpKeys = func() []key.Binding {
+	// 	return []key.Binding{backKey}
+	// }
+	// runQueriesMenuList.AdditionalFullHelpKeys = func() []key.Binding {
+	// 	return []key.Binding{backKey}
+	// }
 
 	// Viewport for text results
 	viewport := viewport.New(0, 0)
@@ -158,20 +190,16 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
+		switch {
+		case key.Matches(msg, quitKey):
 			if !m.filterState() {
 				return m, tea.Quit
 			}
-		case "ctrl+c":
-			return m, tea.Quit
-		case "esc":
+		case key.Matches(msg, backKey):
+			// case "esc":
 			if !m.filterState() {
 				return m.NavigateBack(), nil
-				// return m, nil
 			}
-			// TODO: Implement history and go back to the previous screen
-			// TODO: If the history is empty, close the app
 		}
 
 		return m.handleScreenInput(msg)

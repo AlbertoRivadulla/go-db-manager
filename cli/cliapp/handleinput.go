@@ -3,6 +3,7 @@ package cliapp
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -51,8 +52,8 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// 	return m, cmd
 	// }
 
-	switch msg.String() {
-	case "enter":
+	switch {
+	case key.Matches(msg, selectKey):
 		item, ok := m.mainMenuList.SelectedItem().(menuItem)
 		if !ok {
 			return m, nil
@@ -81,8 +82,8 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// 	return m, cmd
 	// }
 
-	switch msg.String() {
-	case "enter":
+	switch {
+	case key.Matches(msg, selectKey):
 		item, ok := m.viewTablesMenuList.SelectedItem().(menuItem)
 		if !ok {
 			return m, nil
@@ -104,8 +105,8 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter":
+	switch {
+	case key.Matches(msg, selectKey):
 		item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
 		if !ok {
 			return m, nil
@@ -133,8 +134,8 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 }
 
 func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter":
+	switch {
+	case key.Matches(msg, selectKey):
 		// item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
 		// if !ok {
 		// 	return m, nil
@@ -252,6 +253,8 @@ func (m *Model) setupTable(tableName string, tableDesc string) error {
 
 	m.table.SetColumns(tableColumns)
 	m.table.SetRows(tableRows)
+
+	m.currTableNrEntries = len(tableRows)
 
 	return nil
 }

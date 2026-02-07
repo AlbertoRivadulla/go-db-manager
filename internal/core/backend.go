@@ -107,16 +107,16 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 		}
 	}
 
-	// FIXME: Delete this
-	for _ = range 100 {
-		_, err = store.RunQuery(`
-			INSERT INTO Cars (model, year, license_plate, chassis_nr, ITV_date, ITV_interval)
-			VALUES ("mod", "2000", "abcd", "algo123", "1/1/2001", 12)
-		`)
-		if err != nil {
-			fmt.Printf("Error %s\n", err)
-		}
-	}
+	// // FIXME: Delete this
+	// for _ = range 100 {
+	// 	_, err = store.RunQuery(`
+	// 		INSERT INTO Cars (model, year, license_plate, chassis_nr, ITV_date, ITV_interval)
+	// 		VALUES ("mod", "2000", "abcd", "algo123", "1/1/2001", 12)
+	// 	`)
+	// 	if err != nil {
+	// 		fmt.Printf("Error %s\n", err)
+	// 	}
+	// }
 
 	return &backend, nil
 }

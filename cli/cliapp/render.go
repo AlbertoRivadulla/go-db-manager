@@ -1,9 +1,9 @@
 package cliapp
 
 import (
+	"fmt"
 	"strings"
 
-	// tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -39,7 +39,14 @@ func (m Model) RenderRightColumn() string {
 		sections = append(sections, descStyle.Render(m.currTableDesc))
 		sections = append(sections, "")
 
+		sections = append(sections, descStyle.Render(fmt.Sprintf("%d entries", m.currTableNrEntries)))
+		sections = append(sections, "")
+
 		sections = append(sections, m.table.View())
+
+		// TODO: Finish this
+		helpText := helpStyle.Render("↑/↓: navigate • d: delete • ???")
+		sections = append(sections, helpText)
 
 		content := strings.Join(sections, "\n")
 
