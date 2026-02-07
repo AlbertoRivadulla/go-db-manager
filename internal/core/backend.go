@@ -140,7 +140,7 @@ func (backend *Backend) GetColumnsInTable(table string) ([]string, error) {
 }
 
 func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
-	query := fmt.Sprintf("SELECT * FROM %s;", table)
+	query := backend.mapTableSpecs[table].Table.QueryGetAllEntries()
 	result, err := backend.Store.QueryTo2DimArray(query)
 	if err != nil {
 		return nil, err

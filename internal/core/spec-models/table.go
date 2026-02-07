@@ -10,11 +10,17 @@ type TableSpec struct {
 }
 
 type Table struct {
-	Name        string       `yaml:"name"`
-	Description string       `yaml:"desc"`
-	Schema      string       `yaml:"schema"`
-	ForeignKeys []ForeignKey `yaml:"foreign_keys"`
-	Columns     []Column     `yaml:"columns"`
+	Name         string       `yaml:"name"`
+	Description  string       `yaml:"desc"`
+	Schema       string       `yaml:"schema"`
+	DefaultOrder *Order        `yaml:"default_order"`
+	ForeignKeys  []ForeignKey `yaml:"foreign_keys"`
+	Columns      []Column     `yaml:"columns"`
+}
+
+type Order struct {
+	Column     string `yaml:"column"`
+	Descending bool   `yaml:"descending"`
 }
 
 type ForeignKey struct {
@@ -155,4 +161,16 @@ func (fk ForeignKey) QueryDefinition() string {
 	}
 
 	return stmt
+}
+
+func (t Table) QueryGetAllEntries() string {
+	stmt := fmt.Sprintf("SELECT * FROM %s", t.Name)
+	if t.DefaultOrder != nil {
+		stmt += fmt.Sprintf(" ORDER BY %s", t.DefaultOrder.Column)
+		if t.DefaultOrder.Descending {
+			stmt += " DESC"
+		}
+	}
+
+	return stmt + ";"
 }

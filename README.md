@@ -25,6 +25,10 @@ The files in these directories have the following contents:
       name: MyTable
       schema: public
 
+      default_order:
+        column: cost
+        descending: false
+
       foreign_keys:
         - column: other_id
           references:
@@ -39,7 +43,7 @@ The files in these directories have the following contents:
           nullable: false
 
         - name: other
-          type:integer
+          type: integer
           nullable: false
 
         - name: title
