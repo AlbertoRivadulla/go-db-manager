@@ -54,6 +54,11 @@ var (
 			Bold(false)
 
 	// Style for the text forms
+	formLabelStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("229"))
+	textUnfocusedBorderColor = lipgloss.Color("240")
+	textFocusedBorderColor = lipgloss.Color("170")
 	textFocusedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("229")).
 			Background(lipgloss.Color("57")).
@@ -74,5 +79,14 @@ var (
 	selectKey = key.NewBinding(
 		key.WithKeys("enter", "o"),
 		key.WithHelp("enter/o", "select"),
+	)
+
+	nextEntryKey = key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "next entry"),
+	)
+	prevEntryKey = key.NewBinding(
+		key.WithKeys("shift+tab"),
+		key.WithHelp("shift+tab", "previous entry"),
 	)
 )

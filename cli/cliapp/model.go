@@ -229,6 +229,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.table.SetHeight(m.height - 10)
 
+		m.addEntryForm.Height = m.height
+
 		if !m.ready {
 			m.ready = true
 		}

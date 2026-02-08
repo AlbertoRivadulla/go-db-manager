@@ -21,7 +21,7 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case ManageTableScreen:
 		return m.handleManageTableMenuScreen(msg)
 	case AddEntryScreen:
-		// TODO:
+		return m.handleAddEntryScreen(msg)
 	case EditEntryScreen:
 		// TODO:
 	case SelectQueryScreen:
@@ -139,6 +139,12 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
+	return m, cmd
+}
+
+func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.addEntryForm, cmd = m.addEntryForm.Update(msg)
 	return m, cmd
 }
 
@@ -271,7 +277,7 @@ func (m *Model) setupEntryForm() error {
 		return fmt.Errorf("Error getting the column specs for table %s: %w", m.currTableName, err)
 	}
 
-	m.addEntryForm.Cursor = 0
+	m.addEntryForm.FocusedField = 0
 	m.addEntryForm.Title = fmt.Sprintf("Add entry to the table %s", m.currTableName)
 
 	// Populate the elements in the form
