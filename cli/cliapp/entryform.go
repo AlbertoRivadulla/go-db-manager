@@ -1,7 +1,10 @@
 package cliapp
 
 import (
+	"fmt"
 	"strings"
+
+	"carmaintenance/internal/core/spec-models"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -35,24 +38,30 @@ func NewEntryForm() EntryForm {
 }
 
 func (f EntryForm) Update(msg tea.KeyMsg) (EntryForm, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
 	switch {
 	case key.Matches(msg, nextEntryKey):
+		f.Fields[f.FocusedField].Input.Blur()
 		f.FocusedField = (f.FocusedField + 1) % len(f.Fields)
+		cmd = f.Fields[f.FocusedField].Input.Focus()
+		return f, cmd
 	case key.Matches(msg, prevEntryKey):
+		f.Fields[f.FocusedField].Input.Blur()
 		if f.FocusedField == 0 {
 			f.FocusedField = len(f.Fields) - 1
 		} else {
 			f.FocusedField--
 		}
-
-		// TODO: Key enter
+		cmd = f.Fields[f.FocusedField].Input.Focus()
+		return f, cmd
 	}
 
 	// Update the text in the focused field
-	var cmd tea.Cmd
 	f.Fields[f.FocusedField].Input, cmd = f.Fields[f.FocusedField].Input.Update(msg)
+	cmds = append(cmds, cmd)
 
-	return f, cmd
+	return f, tea.Batch(cmds...)
 }
 
 func (f EntryForm) View() string {
@@ -71,7 +80,7 @@ func (f EntryForm) View() string {
 	}
 	topHeight += len(sections) + 4
 
-	helpText := helpStyle.Render("Tab/Shift+Tab: navigate • enter: accept")
+	helpText := helpStyle.Render("Tab/↓: next field • Shift+Tab/↑: previous field • enter: add entry • esc: go back")
 
 	spacerHeight := f.Height - topHeight - lipgloss.Height(helpText)
 	if spacerHeight > 0 {
@@ -114,6 +123,49 @@ func (f EntryForm) renderField(field FormField, focused bool) string {
 	return b.String()
 }
 
-// TODO: Implement functions:
-// 	- GetValues -> Get all the values as a map
-// 	- Validate ->
+func (f EntryForm) GetValues() ([]string, []string, error) {
+	var keys []string
+	var values []string
+
+	if err := f.validate(); err != nil {
+		return keys, values, fmt.Errorf("could not get values from form: %w", err)
+	}
+
+	// TODO:
+
+	return keys, values, nil
+}
+
+func (f EntryForm) validate() error {
+
+	for _, field := range f.Fields {
+		if err := validateField(field); err != nil {
+			return fmt.Errorf("invalid field \"%s\": %w", field.Label, err)
+		}
+	}
+
+	return nil
+}
+
+func validateField(field FormField) error {
+	value := field.Input.Value()
+
+	if field.Required && value == "" {
+		return core.ValidationError{fmt.Sprintf("field must not be empty")}
+	}
+
+	if value != "" {
+		switch field.DataType {
+		case "integer":
+			return core.ValidateInt(value)
+		case "real":
+			return core.ValidateReal(value)
+		case "text":
+			return core.ValidateText(value)
+		case "timestamp":
+			return core.ValidateTimestamp(value)
+		}
+	}
+
+	return nil
+}

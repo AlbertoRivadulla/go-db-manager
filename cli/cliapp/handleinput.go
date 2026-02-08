@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -143,6 +144,26 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, sendFormKey):
+		// keys, values, err := m.addEntryForm.GetValues()
+		_, _, err := m.addEntryForm.GetValues()
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error: %s", err)
+
+			return m, nil
+		}
+
+		// TODO: 
+		// Pass the values to the backend and add the entry
+
+		// 
+		m.status.State = StatusBarStateOk
+		m.status.Message = fmt.Sprintf("PLACEHOLDER")
+		return m.NavigateBack(), nil
+	}
+
 	var cmd tea.Cmd
 	m.addEntryForm, cmd = m.addEntryForm.Update(msg)
 	return m, cmd
@@ -174,7 +195,7 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 	case ManageTableScreen:
 		m.currScreenLeft = toScreen
 
-		err := m.setupTable()
+		err := m.setupTable(fromScreen == ViewTablesScreen)
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
@@ -228,7 +249,7 @@ func (m Model) getTablesAsMenuItems() []list.Item {
 	return menuItems
 }
 
-func (m *Model) setupTable() error {
+func (m *Model) setupTable(showStatusOk bool) error {
 	// TODO: Do I need to set m.currScreenRight?
 	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", m.currTableName)
 	m.showTable = true
@@ -244,8 +265,10 @@ func (m *Model) setupTable() error {
 	if err != nil {
 		return fmt.Errorf("Error reading table entries: %w", err)
 	}
-	m.status.State = StatusBarStateOk
-	m.status.Message = fmt.Sprintf("Read table %v", m.currTableName)
+	if showStatusOk {
+		m.status.State = StatusBarStateOk
+		m.status.Message = fmt.Sprintf("Read table %v", m.currTableName)
+	}
 
 	tableColumns := make([]table.Column, len(columns))
 	for i, col := range columns {
@@ -281,7 +304,6 @@ func (m *Model) setupEntryForm() error {
 	m.addEntryForm.Title = fmt.Sprintf("Add entry to the table %s", m.currTableName)
 
 	// Populate the elements in the form
-	// m.addEntryForm.Fields = make([]FormField, len(columnSpecs))
 	m.addEntryForm.Fields = []FormField{}
 
 	for _, colSpec := range columnSpecs {
@@ -295,8 +317,12 @@ func (m *Model) setupEntryForm() error {
 		field.DefaultValue = ""
 		field.Required = (!colSpec.Nullable)
 
+		field.Input = textinput.New()
+
 		m.addEntryForm.Fields = append(m.addEntryForm.Fields, field)
 	}
+
+	m.addEntryForm.Fields[0].Input.Focus()
 
 	return nil
 }

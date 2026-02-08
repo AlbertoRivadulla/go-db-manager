@@ -173,7 +173,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		viewTablesMenuList:  viewTablesMenuList,
 		manageTableMenuList: manageTableMenuList,
 		runQueriesMenuList:  runQueriesMenuList,
-		addEntryForm:        addEntryForm,
+		addEntryForm:        addEntryForm,	
 
 		viewport: viewport,
 		table:    dataTable,
@@ -196,11 +196,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, quitKey):
-			if !m.filterState() {
+			if !m.filterState() && m.currScreenFocus != AddEntryScreen {
 				return m, tea.Quit
 			}
 		case key.Matches(msg, backKey):
-			// case "esc":
 			if !m.filterState() {
 				return m.NavigateBack(), nil
 			}

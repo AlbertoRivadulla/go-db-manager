@@ -82,11 +82,15 @@ var (
 	)
 
 	nextEntryKey = key.NewBinding(
-		key.WithKeys("tab"),
+		key.WithKeys("tab", "down"),
 		key.WithHelp("tab", "next entry"),
 	)
 	prevEntryKey = key.NewBinding(
-		key.WithKeys("shift+tab"),
+		key.WithKeys("shift+tab", "up"),
 		key.WithHelp("shift+tab", "previous entry"),
+	)
+	sendFormKey = key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "add entry"),
 	)
 )
