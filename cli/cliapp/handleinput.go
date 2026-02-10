@@ -282,7 +282,7 @@ func (m *Model) setupTable(showStatusOk bool) error {
 	for i, col := range columns {
 		tableColumns[i] = table.Column{
 			Title: col,
-			Width: len(col) + 2,
+			Width: len(col) + 4,
 		}
 	}
 

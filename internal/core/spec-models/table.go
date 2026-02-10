@@ -164,7 +164,16 @@ func (fk ForeignKey) QueryDefinition() string {
 }
 
 func (t Table) QueryGetAllEntries() string {
-	stmt := fmt.Sprintf("SELECT * FROM %s", t.Name)
+	colNames := make([]string, len(t.Columns))
+	for i, col := range t.Columns {
+		if col.Type != "timestamp" {
+			colNames[i] = col.Name
+		} else {
+			colNames[i] = fmt.Sprintf("date(%s)", col.Name)
+		}
+	}
+
+	stmt := fmt.Sprintf("SELECT %s FROM %s", strings.Join(colNames, ", "), t.Name)
 	if t.DefaultOrder != nil {
 		stmt += fmt.Sprintf(" ORDER BY %s", t.DefaultOrder.Column)
 		if t.DefaultOrder.Descending {
