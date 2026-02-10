@@ -146,8 +146,7 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, sendFormKey):
-		// keys, values, err := m.addEntryForm.GetValues()
-		_, _, err := m.addEntryForm.GetValues()
+		keys, values, err := m.addEntryForm.GetValues()
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error: %s", err)
@@ -155,12 +154,21 @@ func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// TODO: 
-		// Pass the values to the backend and add the entry
+		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error: %s", err)
+		}
 
-		// 
+		err = m.setupTable(false)
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
+			return m, nil
+		}
+
 		m.status.State = StatusBarStateOk
-		m.status.Message = fmt.Sprintf("PLACEHOLDER")
+		m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
 		return m.NavigateBack(), nil
 	}
 

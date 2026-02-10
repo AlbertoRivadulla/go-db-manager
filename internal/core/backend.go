@@ -107,17 +107,6 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 		}
 	}
 
-	// // FIXME: Delete this
-	// for _ = range 100 {
-	// 	_, err = store.RunQuery(`
-	// 		INSERT INTO Cars (model, year, license_plate, chassis_nr, ITV_date, ITV_interval)
-	// 		VALUES ("mod", "2000", "abcd", "algo123", "1/1/2001", 12)
-	// 	`)
-	// 	if err != nil {
-	// 		fmt.Printf("Error %s\n", err)
-	// 	}
-	// }
-
 	return &backend, nil
 }
 
@@ -156,6 +145,16 @@ func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
 	}
 
 	return result, nil
+}
+
+func (backend *Backend) AddEntryToTable(table string, columns []string, values []string) error {
+	query := backend.mapTableSpecs[table].Table.QueryAddEntry(columns, values)
+	_, err := backend.Store.RunQueryNoReturn(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (backend *Backend) Cleanup() {

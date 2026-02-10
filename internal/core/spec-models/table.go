@@ -174,3 +174,13 @@ func (t Table) QueryGetAllEntries() string {
 
 	return stmt + ";"
 }
+
+func (t Table) QueryAddEntry(columns []string, values []string) string {
+	columnsStr := strings.Join(columns, ", ")
+	for i, val := range values {
+		values[i] = fmt.Sprintf("\"%s\"", val)
+	}
+	valuesStr := strings.Join(values, ", ")
+
+	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", t.Name, columnsStr, valuesStr)
+}

@@ -131,7 +131,13 @@ func (f EntryForm) GetValues() ([]string, []string, error) {
 		return keys, values, fmt.Errorf("could not get values from form: %w", err)
 	}
 
-	// TODO:
+	for _, field := range f.Fields {
+		value := field.Input.Value()
+		if value != "" {
+			keys = append(keys, field.Label)
+			values = append(values, value)
+		}
+	}
 
 	return keys, values, nil
 }
