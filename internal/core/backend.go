@@ -7,7 +7,7 @@ import (
 
 	// _ "modernc.org/sqlite"
 
-	"carmaintenance/internal/core/spec-models"
+	"dbmanager/internal/core/spec-models"
 
 	"gopkg.in/yaml.v3"
 )

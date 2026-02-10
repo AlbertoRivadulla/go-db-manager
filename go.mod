@@ -1,4 +1,4 @@
-module carmaintenance
+module dbmanager
 
 go 1.24.4
 

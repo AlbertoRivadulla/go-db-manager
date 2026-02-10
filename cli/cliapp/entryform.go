@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"carmaintenance/internal/core/spec-models"
+	"dbmanager/internal/core/spec-models"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"

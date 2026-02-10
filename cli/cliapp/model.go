@@ -3,7 +3,7 @@ package cliapp
 import (
 	"context"
 
-	"carmaintenance/internal/core"
+	"dbmanager/internal/core"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"

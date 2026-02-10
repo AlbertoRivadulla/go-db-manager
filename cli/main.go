@@ -10,15 +10,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"carmaintenance/cli/cliapp"
-	"carmaintenance/internal/core"
+	"dbmanager/cli/cliapp"
+	"dbmanager/internal/core"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	dbPath := flag.String("dbpath", "$HOME/carmaintenance/database.db", "the path of the database")
-	specsDir := flag.String("specs", "$HOME/carmaintenance/specs/", "the directory with the specifications YAML files")
+	dbPath := flag.String("dbpath", "$HOME/dbmanager/database.db", "the path of the database")
+	specsDir := flag.String("specs", "$HOME/dbmanager/specs/", "the directory with the specifications YAML files")
 	flag.Parse()
 
 	// Create context that cancels on interrupt signal
