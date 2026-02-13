@@ -135,11 +135,22 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// if !ok {
 		// 	return m, nil
 		// }
-		// TODO: Implement
+
+		// Draw a modal with the data in the current entry
+		m.showTableModal = true
+
+		// TODO: Implement other keys
 	}
+
+	// if m.showTableModal {
+	// 	switch {
+	// 	// TODO: Implement other keys in the table modal
+	// 	}
+	// }
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
+	m.tableModalIndex = m.table.Cursor()
 	return m, cmd
 }
 
@@ -282,7 +293,7 @@ func (m *Model) setupTable(showStatusOk bool) error {
 	for i, col := range columns {
 		tableColumns[i] = table.Column{
 			Title: col,
-			Width: len(col) + 4,
+			Width: len(col) + 3,
 		}
 	}
 

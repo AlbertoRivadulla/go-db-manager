@@ -66,6 +66,10 @@ var (
 	textBlurredStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("241"))
 
+	// Style for modals
+	modalBorderColor = lipgloss.Color("170")
+	modalBackgroundColor = lipgloss.Color("235")
+
 	quitKey = key.NewBinding(
 		key.WithKeys("q"),
 		key.WithHelp("q", "quit"),

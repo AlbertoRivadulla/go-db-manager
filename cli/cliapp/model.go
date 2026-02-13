@@ -48,13 +48,16 @@ type Model struct {
 	currTableDesc      string
 	currTableNrEntries int
 	showTable          bool
+	showTableModal     bool
+	tableModalIndex    int
 	status             StatusBarProps
 
-	width           int
-	leftWidth       int
-	rightWidth      int
-	height          int
-	mainItemsHeight int
+	width              int
+	leftWidth          int
+	rightWidth         int
+	maxTableModalWidth int
+	height             int
+	mainItemsHeight    int
 
 	ready bool
 
@@ -173,10 +176,11 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		viewTablesMenuList:  viewTablesMenuList,
 		manageTableMenuList: manageTableMenuList,
 		runQueriesMenuList:  runQueriesMenuList,
-		addEntryForm:        addEntryForm,	
+		addEntryForm:        addEntryForm,
 
-		viewport: viewport,
-		table:    dataTable,
+		viewport:       viewport,
+		table:          dataTable,
+		showTableModal: false,
 
 		status:    status,
 		showTable: false,
@@ -200,6 +204,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		case key.Matches(msg, backKey):
+			if m.showTableModal {
+				m.showTableModal = false
+				return m, nil
+			}
 			if !m.filterState() {
 				return m.NavigateBack(), nil
 			}
@@ -216,6 +224,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Column width
 		m.leftWidth = int(float64(m.width) * 0.4)
 		m.rightWidth = m.width - m.leftWidth - 2
+		m.maxTableModalWidth = m.rightWidth - 40
 
 		m.mainMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.viewTablesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)

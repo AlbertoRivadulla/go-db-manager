@@ -21,7 +21,7 @@ specs/
     └-- table.yaml
 ```
 The files in these directories have the following contents:
-- `tables/`: defines the different tables in the database, and requirements for the data in them. An example of a file located there would be:
+- `tables/`: defines the different tables in the database, and requirements for the data in them. An example such file would be:
     ```YAML
     table:
       name: MyTable
@@ -57,7 +57,7 @@ The files in these directories have the following contents:
           default: "0.0"
           check: "price >= 0.0"
     ```
-- `rules/`: defines rules for the regular maintenances. Example:
+- `rules/`: defines rules for the operations on the data. Example:
     ```YAML
     # TODO:
     ```
