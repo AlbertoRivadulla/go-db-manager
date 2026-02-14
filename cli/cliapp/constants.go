@@ -80,6 +80,13 @@ var (
 		key.WithHelp("esc", "go back"),
 	)
 
+	leftKey = key.NewBinding(
+		key.WithKeys("left"),
+	)
+	rightKey = key.NewBinding(
+		key.WithKeys("right"),
+	)
+
 	selectKey = key.NewBinding(
 		key.WithKeys("enter", "o"),
 		key.WithHelp("enter/o", "select"),

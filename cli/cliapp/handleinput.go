@@ -134,7 +134,7 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.showConfirmModal {
 		switch {
-		case key.Matches(msg, nextEntryKey):
+		case key.Matches(msg, nextEntryKey), key.Matches(msg, leftKey), key.Matches(msg, rightKey):
 			m.confirmModalSelected = !m.confirmModalSelected
 			return m, nil
 		case key.Matches(msg, selectKey):
@@ -157,7 +157,7 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// }
 
 		// Draw a modal with the data in the current entry
-		m.showTableModal = true
+		m.showTableModal = !m.showTableModal
 
 		// TODO: Implement other keys
 	}
