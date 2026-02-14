@@ -150,11 +150,13 @@ func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
 func (backend *Backend) AddEntryToTable(table string, columns []string, values []string) error {
 	query := backend.mapTableSpecs[table].Table.QueryAddEntry(columns, values)
 	_, err := backend.Store.RunQueryNoReturn(query)
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	return nil
+func (backend *Backend) DeleteEntryFromTable(table string, row []string) error {
+	query := backend.mapTableSpecs[table].Table.QueryDeleteEntry(row)
+	_, err := backend.Store.RunQueryNoReturn(query)
+	return err
 }
 
 func (backend *Backend) Cleanup() {

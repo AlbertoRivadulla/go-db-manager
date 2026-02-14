@@ -49,9 +49,17 @@ func (m Model) RenderRightColumn() string {
 
 		sections = append(sections, m.table.View())
 
-		// TODO: Finish this
-		helpText := helpStyle.Render("↑/↓: navigate • d: delete • enter: view entry • ???")
-		sections = append(sections, helpText)
+		if m.editEntryMode {
+			helpText := helpStyle.Render(fmt.Sprintf("↑/↓: navigate • %s: edit • %s: delete • %s: view entry • ???",
+				editEntryKey.Keys()[0],
+				deleteEntryKey.Keys()[0],
+				selectKey.Keys()[0],
+			))
+			sections = append(sections, helpText)
+		} else {
+			helpText := helpStyle.Render(fmt.Sprintf("↑/↓: navigate • %s: view entry • ???", selectKey.Keys()[0]))
+			sections = append(sections, helpText)
+		}
 
 		content := strings.Join(sections, "\n")
 
@@ -63,6 +71,8 @@ func (m Model) RenderRightColumn() string {
 
 		if m.showTableModal {
 			content = m.overlayTableModal(content)
+		} else if m.showConfirmModal {
+			content = m.overlayConfirmModal(content)
 		}
 
 		return containerStyle.Render(content)
@@ -124,4 +134,74 @@ func (m Model) renderTableModalContent(columns []table.Column, item table.Row) (
 	}
 
 	return b.String(), textWidth
+}
+
+func (m Model) overlayConfirmModal(baseView string) string {
+	modalContent := m.renderConfirmModalContent()
+
+	modalStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(modalBorderColor).
+		Background(modalBackgroundColor).
+		Padding(1, 2)
+
+	modal := modalStyle.Render(modalContent)
+
+	output := overlay.Composite(modal, baseView, overlay.Center, overlay.Center, 0, 0)
+
+	return output
+}
+
+// func (m Model) renderConfirmModalContent() (string, int) {
+func (m Model) renderConfirmModalContent() string {
+	noButton := renderButton("No", !m.confirmModalSelected)
+	yesButton := renderButton("Yes", m.confirmModalSelected)
+
+	mainText, mainTextWidth := utils.WrapText(m.confirmModalText, m.maxTableModalWidth)
+	mainText = whiteStyle.Render(mainText)
+	modalWidth := max(mainTextWidth + 2, m.minConfirmModalWidth)
+
+	emptyLineStyle := lipgloss.NewStyle().
+		Background(modalBackgroundColor)
+	buttons := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		noButton,
+		emptyLineStyle.Height(3).Render("  "),
+		yesButton,
+	)
+
+	buttonsStyle := lipgloss.NewStyle().
+		Background(modalBackgroundColor).
+		Width(modalWidth).
+		Align(lipgloss.Center)
+	
+	buttons = buttonsStyle.Render(buttons)
+
+	return lipgloss.JoinVertical(
+		lipgloss.Center,
+		mainText,
+		emptyLineStyle.Width(modalWidth).Render(""),
+		buttons,
+	)
+}
+
+func renderButton(text string, selected bool) string {
+	if selected {
+		return lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(textFocusedBorderColor).
+			BorderBackground(modalBackgroundColor).
+			Background(modalBackgroundColor).
+			Padding(0, 2).
+			Bold(true).
+			Render(text)
+	}
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(textUnfocusedBorderColor).
+		BorderBackground(modalBackgroundColor).
+		Background(modalBackgroundColor).
+		Padding(0, 2).
+		Render(text)
 }

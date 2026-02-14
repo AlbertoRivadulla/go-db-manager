@@ -117,9 +117,12 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			return m.navigateTo(m.currScreenLeft, AddEntryScreen), nil
 
 		case "Edit entry":
-			var cmd tea.Cmd
-			return m, cmd
-			// TODO: Implement this
+			if len(m.table.Rows()) > 0 {
+				m.editEntryMode = true
+				return m.navigateTo(m.currScreenLeft, TableScreen), nil
+			} else {
+				m.status.Message = fmt.Sprintf("No entries in the table %s", m.currTableName)
+			}
 		}
 	}
 
@@ -129,6 +132,23 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 }
 
 func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.showConfirmModal {
+		switch {
+		case key.Matches(msg, nextEntryKey):
+			m.confirmModalSelected = !m.confirmModalSelected
+			return m, nil
+		case key.Matches(msg, selectKey):
+			m.showConfirmModal = false
+			if m.confirmModalSelected {
+				if err := m.confirmModalClosure(); err != nil {
+					m.status.State = StatusBarStateErr
+					m.status.Message = fmt.Sprintf("Error: %s", err)
+				}
+			}
+			return m.navigateTo(m.currScreenLeft, TableScreen), nil
+		}
+	}
+
 	switch {
 	case key.Matches(msg, selectKey):
 		// item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
@@ -147,6 +167,22 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// 	// TODO: Implement other keys in the table modal
 	// 	}
 	// }
+
+	if m.editEntryMode {
+		switch {
+		case key.Matches(msg, deleteEntryKey):
+			m.showConfirmModal = true
+			m.confirmModalSelected = false
+			m.confirmModalText = "Are you sure you want to remove the selected entry?"
+			m.confirmModalClosure = func() error {
+				return m.backend.DeleteEntryFromTable(m.currTableName, m.table.SelectedRow())
+			}
+
+		case key.Matches(msg, editEntryKey):
+			// TODO: Implement
+			// s: edit the entry (show a modal to confirm)
+		}
+	}
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
@@ -231,6 +267,13 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 			Bold(false)
 		m.table.SetStyles(s)
 	case TableScreen:
+		err := m.setupTable(fromScreen == ViewTablesScreen)
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
+			return m
+		}
+
 		// Set the style of the selected row when navigating it
 		s := table.DefaultStyles()
 		s.Header = s.Header.

@@ -193,3 +193,17 @@ func (t Table) QueryAddEntry(columns []string, values []string) string {
 
 	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", t.Name, columnsStr, valuesStr)
 }
+
+func (t Table) QueryDeleteEntry(row []string) string {
+	var primaryKeyCol string
+	var primaryKeyVal string
+	for i, col := range t.Columns {
+		if col.PrimaryKey {
+			primaryKeyCol = col.Name
+			primaryKeyVal = row[i]
+			break
+		}
+	}
+
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", t.Name, primaryKeyCol, primaryKeyVal)
+}

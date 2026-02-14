@@ -97,4 +97,13 @@ var (
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "add entry"),
 	)
+
+	editEntryKey = key.NewBinding(
+		key.WithKeys("s"),
+		key.WithHelp("s", "edit entry"),
+	)
+	deleteEntryKey = key.NewBinding(
+		key.WithKeys("x"),
+		key.WithHelp("x", "delete entry"),
+	)
 )

@@ -44,13 +44,19 @@ type Model struct {
 	table    table.Model
 	viewport viewport.Model // TODO: I think I don't need this
 
-	currTableName      string
-	currTableDesc      string
-	currTableNrEntries int
-	showTable          bool
-	showTableModal     bool
-	tableModalIndex    int
-	status             StatusBarProps
+	currTableName        string
+	currTableDesc        string
+	currTableNrEntries   int
+	showTable            bool
+	showTableModal       bool
+	tableModalIndex      int
+	showConfirmModal     bool
+	confirmModalSelected bool
+	confirmModalText     string
+	confirmModalClosure  func() error
+	minConfirmModalWidth int
+	editEntryMode        bool
+	status               StatusBarProps
 
 	width              int
 	leftWidth          int
@@ -78,7 +84,8 @@ func (i menuItem) FilterValue() string { return i.title }
 func NewModel(ctx context.Context, backend *core.Backend) Model {
 	mainMenuItems := []list.Item{
 		menuItem{title: "Manage tables", desc: "Operate on the available tables"},
-		menuItem{title: "Run queries", desc: "Run one of the specified queries"},
+		// TODO: Change this description
+		menuItem{title: "Run queries", desc: "NOT IMPLEMENTED\nRun one of the specified queries"},
 	}
 	mainMenuList := list.New(mainMenuItems, list.NewDefaultDelegate(), 0, 0)
 	mainMenuList.Styles.Title = titleStyle
@@ -178,9 +185,10 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		runQueriesMenuList:  runQueriesMenuList,
 		addEntryForm:        addEntryForm,
 
-		viewport:       viewport,
-		table:          dataTable,
-		showTableModal: false,
+		viewport:         viewport,
+		table:            dataTable,
+		showTableModal:   false,
+		showConfirmModal: false,
 
 		status:    status,
 		showTable: false,
@@ -207,6 +215,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.showTableModal {
 				m.showTableModal = false
 				return m, nil
+			} else if m.showConfirmModal {
+				m.showConfirmModal = false
+				return m, nil
+			} else if m.editEntryMode {
+				m.editEntryMode = false
+				return m.NavigateBack(), nil
 			}
 			if !m.filterState() {
 				return m.NavigateBack(), nil
@@ -225,6 +239,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.leftWidth = int(float64(m.width) * 0.4)
 		m.rightWidth = m.width - m.leftWidth - 2
 		m.maxTableModalWidth = m.rightWidth - 40
+		m.minConfirmModalWidth = 40
 
 		m.mainMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.viewTablesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
