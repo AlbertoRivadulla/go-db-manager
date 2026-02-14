@@ -5,12 +5,19 @@ import (
 	"os"
 	"path/filepath"
 
-	// _ "modernc.org/sqlite"
-
 	"dbmanager/internal/core/spec-models"
 
 	"gopkg.in/yaml.v3"
 )
+
+// Used for the history of updates
+type RowUpdateOperation struct {
+	Table        string
+	Columns      []string
+	Values       []string
+	RowFilterCol string
+	RowFilterval string
+}
 
 type Backend struct {
 	Store         SQLiteStore

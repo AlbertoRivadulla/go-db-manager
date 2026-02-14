@@ -23,8 +23,6 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleManageTableMenuScreen(msg)
 	case AddEntryScreen:
 		return m.handleAddEntryScreen(msg)
-	case EditEntryScreen:
-		// TODO:
 	case SelectQueryScreen:
 		// TODO:
 	case TableScreen:

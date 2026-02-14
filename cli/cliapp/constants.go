@@ -113,4 +113,8 @@ var (
 		key.WithKeys("x"),
 		key.WithHelp("x", "delete entry"),
 	)
+	undoKey = key.NewBinding(
+		key.WithKeys("u"),
+		key.WithHelp("u", "undo"),
+	)
 )
