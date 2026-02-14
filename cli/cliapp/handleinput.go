@@ -102,6 +102,10 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.editEntryMode {
+		return m.navigateTo(None, TableScreen), nil
+	}
+
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
@@ -145,7 +149,7 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					m.status.Message = fmt.Sprintf("Error: %s", err)
 				}
 			}
-			return m.navigateTo(m.currScreenLeft, TableScreen), nil
+			return m.navigateTo(None, TableScreen), nil
 		}
 	}
 
@@ -179,7 +183,7 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, editEntryKey):
-			return m.navigateTo(m.currScreenLeft, AddEntryScreen), nil
+			return m.navigateTo(None, AddEntryScreen), nil
 		}
 	}
 
@@ -202,8 +206,10 @@ func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					m.status.State = StatusBarStateErr
 					m.status.Message = fmt.Sprintf("Error: %s", err)
 				}
+				m = m.navigateTo(None, ManageTableScreen).(Model)
+				return m.navigateTo(None, TableScreen), nil
 			}
-			return m.navigateTo(m.currScreenLeft, ManageTableScreen), nil
+			return m, nil
 		}
 	}
 	switch {

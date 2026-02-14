@@ -221,6 +221,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showConfirmModal = false
 				return m, nil
 			} else if m.editEntryMode {
+				if m.currScreenLeft == AddEntryScreen {
+					m = m.NavigateBack().(Model)
+					return m.navigateTo(m.currScreenLeft, TableScreen), nil
+				}
 				m.editEntryMode = false
 				return m.NavigateBack(), nil
 			}
