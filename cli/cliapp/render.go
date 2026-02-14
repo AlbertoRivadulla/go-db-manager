@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"dbmanager/internal/utils"
+
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
@@ -106,7 +108,7 @@ func (m Model) renderTableModalContent(columns []table.Column, item table.Row) (
 		b.WriteString("\n")
 
 		if len(item[i]) > m.maxTableModalWidth {
-			text, thisWidth := wrapText(item[i], m.maxTableModalWidth)
+			text, thisWidth := utils.WrapText(item[i], m.maxTableModalWidth)
 			b.WriteString(text)
 			if thisWidth > textWidth {
 				textWidth = thisWidth
@@ -122,33 +124,4 @@ func (m Model) renderTableModalContent(columns []table.Column, item table.Row) (
 	}
 
 	return b.String(), textWidth
-}
-
-func wrapText(text string, maxWidth int) (string, int) {
-	if len(text) <= maxWidth {
-		return text, len(text)
-	}
-
-	width := 0
-
-	var lines []string
-	words := strings.Fields(text)
-	currentLine := words[0]
-
-	for _, word := range words[1:] {
-		if len(currentLine)+1+len(word) <= maxWidth {
-			currentLine += " " + word
-		} else {
-			lines = append(lines, currentLine)
-
-			if len(currentLine) > width {
-				width = len(currentLine)
-			}
-
-			currentLine = word
-		}
-	}
-
-	lines = append(lines, currentLine)
-	return strings.Join(lines, "\n"), width
 }
