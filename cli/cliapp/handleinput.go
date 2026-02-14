@@ -31,28 +31,10 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleTableScreen(msg)
 	}
 
-	// var cmds []tea.Cmd
-	// // // TODO: Update the currently active item in the left
-	// // // Modify this
-	// m.m1ainMenuList, cmd = m.mainMenuList.Update(msg)
-	// cmds = append(cmds, cmd)
-	// //
-	// // // TODO: Update the currently active item in the right
-	// // // Modify this
-	// // m.viewport, cmd = m.viewport.Update(msg)
-	// // cmds = append(cmds, cmd)
-
 	return m, cmd
 }
 
 func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// // Don't intercept keys when filtering is active
-	// if m.mainMenuList.FilterState() == list.Filtering {
-	// 	var cmd tea.Cmd
-	// 	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
-	// 	return m, cmd
-	// }
-
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.mainMenuList.SelectedItem().(menuItem)
@@ -76,13 +58,6 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// // Don't intercept keys when filtering is active
-	// if m.viewTablesMenuList.FilterState() == list.Filtering {
-	// 	var cmd tea.Cmd
-	// 	m.viewTablesMenuList, cmd = m.viewTablesMenuList.Update(msg)
-	// 	return m, cmd
-	// }
-
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.viewTablesMenuList.SelectedItem().(menuItem)
@@ -155,22 +130,9 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	switch {
 	case key.Matches(msg, selectKey):
-		// item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
-		// if !ok {
-		// 	return m, nil
-		// }
-
 		// Draw a modal with the data in the current entry
 		m.showTableModal = !m.showTableModal
-
-		// TODO: Implement other keys
 	}
-
-	// if m.showTableModal {
-	// 	switch {
-	// 	// TODO: Implement other keys in the table modal
-	// 	}
-	// }
 
 	if m.editEntryMode {
 		switch {
@@ -359,7 +321,6 @@ func (m Model) getTablesAsMenuItems() []list.Item {
 }
 
 func (m *Model) setupTable(showStatusOk bool) error {
-	// TODO: Do I need to set m.currScreenRight?
 	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", m.currTableName)
 	m.showTable = true
 

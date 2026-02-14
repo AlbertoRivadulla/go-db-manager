@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -29,7 +28,6 @@ const (
 type Model struct {
 	currScreenFocus Screen
 	currScreenLeft  Screen
-	currScreenRight Screen // TODO: I think I don't need this
 	screenHistory   []Screen
 
 	// Elements of the left column
@@ -38,11 +36,9 @@ type Model struct {
 	manageTableMenuList list.Model
 	runQueriesMenuList  list.Model
 	addEntryForm        EntryForm
-	// TODO: Menu for applying the rules
 
 	// Elements of the right column
 	table    table.Model
-	viewport viewport.Model // TODO: I think I don't need this
 
 	currTableName        string
 	currTableDesc        string
@@ -158,6 +154,7 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		Bold(false)
 	s.Selected = lipgloss.NewStyle()
 	dataTable.SetStyles(s)
+	// TODO:
 	// runQueriesMenuList.AdditionalShortHelpKeys = func() []key.Binding {
 	// 	return []key.Binding{backKey}
 	// }
@@ -168,9 +165,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	addEntryForm := NewEntryForm()
 	addEntryForm.TitleStyle = titleStyle
 
-	// Viewport for text results
-	viewport := viewport.New(0, 0)
-
 	status := StatusBarProps{
 		State:   "green",
 		Message: "",
@@ -179,7 +173,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 	return Model{
 		currScreenFocus: MainMenuScreen,
 		currScreenLeft:  MainMenuScreen,
-		currScreenRight: ViewTablesScreen,
 
 		mainMenuList:        mainMenuList,
 		viewTablesMenuList:  viewTablesMenuList,
@@ -187,7 +180,6 @@ func NewModel(ctx context.Context, backend *core.Backend) Model {
 		runQueriesMenuList:  runQueriesMenuList,
 		addEntryForm:        addEntryForm,
 
-		viewport:         viewport,
 		table:            dataTable,
 		showTableModal:   false,
 		showConfirmModal: false,
@@ -251,8 +243,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewTablesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.manageTableMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
 		m.runQueriesMenuList.SetSize(m.leftWidth, m.mainItemsHeight)
-		m.viewport.Width = m.rightWidth
-		m.viewport.Height = m.mainItemsHeight
 
 		m.status.Width = m.width
 
@@ -292,12 +282,10 @@ func (m Model) View() string {
 }
 
 func (m Model) filterState() bool {
-	// TODO: Take into account the different screens that can be in the filtering state
 	return m.viewTablesMenuList.FilterState() == list.Filtering
 }
 
 func (m Model) updateFilteredScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// TODO: Take into account the different screens that can be in the filtering state
 	var cmd tea.Cmd
 	switch m.currScreenFocus {
 	case ViewTablesScreen:
