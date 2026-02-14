@@ -13,7 +13,7 @@ type Table struct {
 	Name         string       `yaml:"name"`
 	Description  string       `yaml:"desc"`
 	Schema       string       `yaml:"schema"`
-	DefaultOrder *Order        `yaml:"default_order"`
+	DefaultOrder *Order       `yaml:"default_order"`
 	ForeignKeys  []ForeignKey `yaml:"foreign_keys"`
 	Columns      []Column     `yaml:"columns"`
 }
@@ -192,6 +192,15 @@ func (t Table) QueryAddEntry(columns []string, values []string) string {
 	valuesStr := strings.Join(values, ", ")
 
 	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", t.Name, columnsStr, valuesStr)
+}
+
+func (t Table) QueryUpdateRow(filterCol string, filterVal string, columns []string, values []string) string {
+	setValues := make([]string, len(columns))
+	for i, col := range columns {
+		setValues[i] = fmt.Sprintf("\"%s\" = \"%s\"", col, values[i])
+	}
+	setValuesString := strings.Join(setValues, ", ")
+	return fmt.Sprintf("UPDATE %s SET %s WHERE %s = \"%s\";", t.Name, setValuesString, filterCol, filterVal)
 }
 
 func (t Table) QueryDeleteEntry(row []string) string {

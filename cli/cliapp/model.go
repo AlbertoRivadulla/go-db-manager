@@ -56,6 +56,8 @@ type Model struct {
 	confirmModalClosure  func() error
 	minConfirmModalWidth int
 	editEntryMode        bool
+	currRowFilterCol     string
+	currRowFilterVal     string
 	status               StatusBarProps
 
 	width              int

@@ -149,6 +149,14 @@ func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
 
 func (backend *Backend) AddEntryToTable(table string, columns []string, values []string) error {
 	query := backend.mapTableSpecs[table].Table.QueryAddEntry(columns, values)
+	fmt.Printf("Query %s\n", query)
+	_, err := backend.Store.RunQueryNoReturn(query)
+	return err
+}
+
+func (backend *Backend) UpdateRowInTable(table string, filterCol string, filterVal string, columns []string, values []string) error {
+	query := backend.mapTableSpecs[table].Table.QueryUpdateRow(filterCol, filterVal, columns, values)
+	fmt.Printf("Query %s\n", query)
 	_, err := backend.Store.RunQueryNoReturn(query)
 	return err
 }

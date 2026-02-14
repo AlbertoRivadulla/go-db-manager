@@ -179,8 +179,7 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 
 		case key.Matches(msg, editEntryKey):
-			// TODO: Implement
-			// s: edit the entry (show a modal to confirm)
+			return m.navigateTo(m.currScreenLeft, AddEntryScreen), nil
 		}
 	}
 
@@ -201,7 +200,11 @@ func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+		if m.editEntryMode {
+			err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys, values)
+		} else {
+			err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+		}
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error: %s", err)
@@ -215,7 +218,12 @@ func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 		m.status.State = StatusBarStateOk
-		m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
+		if m.editEntryMode {
+			m.status.Message = fmt.Sprintf("Updated entry in table %s", m.currTableName)
+			m.editEntryMode = false
+		} else {
+			m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
+		}
 		return m.NavigateBack(), nil
 	}
 
@@ -382,6 +390,22 @@ func (m *Model) setupEntryForm() error {
 		field.Input = textinput.New()
 
 		m.addEntryForm.Fields = append(m.addEntryForm.Fields, field)
+	}
+
+	if m.editEntryMode {
+		// Populate the form with the current values
+		fieldIdx := 0
+		for i, value := range m.table.SelectedRow() {
+			if !columnSpecs[i].PrimaryKey {
+				if value != "NULL" {
+					m.addEntryForm.Fields[fieldIdx].Input.SetValue(value)
+				}
+				fieldIdx++
+			} else {
+				m.currRowFilterCol = columnSpecs[i].Name
+				m.currRowFilterVal = value
+			}
+		}
 	}
 
 	m.addEntryForm.Fields[0].Input.Focus()
