@@ -190,39 +190,39 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.showConfirmModal {
+		switch {
+		case key.Matches(msg, nextEntryKey), key.Matches(msg, leftKey), key.Matches(msg, rightKey):
+			m.confirmModalSelected = !m.confirmModalSelected
+			return m, nil
+		case key.Matches(msg, selectKey):
+			m.showConfirmModal = false
+			if m.confirmModalSelected {
+				if err := m.confirmModalClosure(); err != nil {
+					m.status.State = StatusBarStateErr
+					m.status.Message = fmt.Sprintf("Error: %s", err)
+				}
+			}
+			return m.navigateTo(m.currScreenLeft, ManageTableScreen), nil
+		}
+	}
 	switch {
 	case key.Matches(msg, sendFormKey):
-		keys, values, err := m.addEntryForm.GetValues()
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error: %s", err)
 
+		if m.editEntryMode {
+			m.showConfirmModal = true
+			m.confirmModalSelected = false
+			m.confirmModalText = "Are you sure you want to update the selected entry?"
+			m.confirmModalClosure = func() error {
+				return m.addOrEditEntry()
+			}
 			return m, nil
 		}
 
-		if m.editEntryMode {
-			err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys, values)
-		} else {
-			err = m.backend.AddEntryToTable(m.currTableName, keys, values)
-		}
+		err := m.addOrEditEntry()
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error: %s", err)
-		}
-
-		err = m.setupTable(false)
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
-			return m, nil
-		}
-
-		m.status.State = StatusBarStateOk
-		if m.editEntryMode {
-			m.status.Message = fmt.Sprintf("Updated entry in table %s", m.currTableName)
-			m.editEntryMode = false
-		} else {
-			m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
 		}
 		return m.NavigateBack(), nil
 	}
@@ -230,6 +230,39 @@ func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.addEntryForm, cmd = m.addEntryForm.Update(msg)
 	return m, cmd
+}
+
+func (m *Model) addOrEditEntry() error {
+	keys, values, err := m.addEntryForm.GetValues()
+	if err != nil {
+		return err
+	}
+
+	if m.editEntryMode {
+		err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys, values)
+	} else {
+		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+	}
+	if err != nil {
+		return err
+	}
+
+	err = m.setupTable(false)
+	if err != nil {
+		m.status.State = StatusBarStateErr
+		m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
+		return err
+	}
+
+	m.status.State = StatusBarStateOk
+	if m.editEntryMode {
+		m.status.Message = fmt.Sprintf("Updated entry in table %s", m.currTableName)
+		m.editEntryMode = false
+	} else {
+		m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
+	}
+
+	return nil
 }
 
 func (m Model) NavigateBack() tea.Model {
