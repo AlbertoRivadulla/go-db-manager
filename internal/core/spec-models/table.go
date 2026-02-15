@@ -13,7 +13,7 @@ type Table struct {
 	Name         string       `yaml:"name"`
 	Description  string       `yaml:"desc"`
 	Schema       string       `yaml:"schema"`
-	DefaultOrder *Order        `yaml:"default_order"`
+	DefaultOrder *Order       `yaml:"default_order"`
 	ForeignKeys  []ForeignKey `yaml:"foreign_keys"`
 	Columns      []Column     `yaml:"columns"`
 }
@@ -98,6 +98,23 @@ func (c Column) Validate() error {
 	}
 
 	return nil
+}
+
+func (t Table) ValuesWithoutPrimaryKey(values []string, ignoreNull bool) []string {
+	// This assumes that the array given has one value for each of the columns in the table,
+	// including the primary key
+
+	var outValues []string
+	for i, val := range values {
+		if !t.Columns[i].PrimaryKey {
+			if ignoreNull && val == "NULL" {
+				continue
+			}
+			outValues = append(outValues, val)
+		}
+	}
+
+	return outValues
 }
 
 func (t Table) QueryCreate() (string, error) {
@@ -192,4 +209,27 @@ func (t Table) QueryAddEntry(columns []string, values []string) string {
 	valuesStr := strings.Join(values, ", ")
 
 	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", t.Name, columnsStr, valuesStr)
+}
+
+func (t Table) QueryUpdateRow(filterCol string, filterVal string, columns []string, values []string) string {
+	setValues := make([]string, len(columns))
+	for i, col := range columns {
+		setValues[i] = fmt.Sprintf("\"%s\" = \"%s\"", col, values[i])
+	}
+	setValuesString := strings.Join(setValues, ", ")
+	return fmt.Sprintf("UPDATE %s SET %s WHERE %s = \"%s\";", t.Name, setValuesString, filterCol, filterVal)
+}
+
+func (t Table) QueryDeleteEntry(row []string) string {
+	var primaryKeyCol string
+	var primaryKeyVal string
+	for i, col := range t.Columns {
+		if col.PrimaryKey {
+			primaryKeyCol = col.Name
+			primaryKeyVal = row[i]
+			break
+		}
+	}
+
+	return fmt.Sprintf("DELETE FROM %s WHERE %s = %s;", t.Name, primaryKeyCol, primaryKeyVal)
 }

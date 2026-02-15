@@ -23,36 +23,16 @@ func (m Model) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleManageTableMenuScreen(msg)
 	case AddEntryScreen:
 		return m.handleAddEntryScreen(msg)
-	case EditEntryScreen:
-		// TODO:
 	case SelectQueryScreen:
 		// TODO:
 	case TableScreen:
 		return m.handleTableScreen(msg)
 	}
 
-	// var cmds []tea.Cmd
-	// // // TODO: Update the currently active item in the left
-	// // // Modify this
-	// m.m1ainMenuList, cmd = m.mainMenuList.Update(msg)
-	// cmds = append(cmds, cmd)
-	// //
-	// // // TODO: Update the currently active item in the right
-	// // // Modify this
-	// // m.viewport, cmd = m.viewport.Update(msg)
-	// // cmds = append(cmds, cmd)
-
 	return m, cmd
 }
 
 func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// // Don't intercept keys when filtering is active
-	// if m.mainMenuList.FilterState() == list.Filtering {
-	// 	var cmd tea.Cmd
-	// 	m.mainMenuList, cmd = m.mainMenuList.Update(msg)
-	// 	return m, cmd
-	// }
-
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.mainMenuList.SelectedItem().(menuItem)
@@ -76,13 +56,6 @@ func (m Model) handleMainMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// // Don't intercept keys when filtering is active
-	// if m.viewTablesMenuList.FilterState() == list.Filtering {
-	// 	var cmd tea.Cmd
-	// 	m.viewTablesMenuList, cmd = m.viewTablesMenuList.Update(msg)
-	// 	return m, cmd
-	// }
-
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.viewTablesMenuList.SelectedItem().(menuItem)
@@ -102,6 +75,10 @@ func (m Model) handleViewTablesMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.editEntryMode {
+		return m.navigateTo(None, TableScreen), nil
+	}
+
 	switch {
 	case key.Matches(msg, selectKey):
 		item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
@@ -117,9 +94,12 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			return m.navigateTo(m.currScreenLeft, AddEntryScreen), nil
 
 		case "Edit entry":
-			var cmd tea.Cmd
-			return m, cmd
-			// TODO: Implement this
+			if len(m.table.Rows()) > 0 {
+				m.editEntryMode = true
+				return m.navigateTo(m.currScreenLeft, TableScreen), nil
+			} else {
+				m.status.Message = fmt.Sprintf("No entries in the table %s", m.currTableName)
+			}
 		}
 	}
 
@@ -129,52 +109,133 @@ func (m Model) handleManageTableMenuScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 }
 
 func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.showConfirmModal {
+		switch {
+		case key.Matches(msg, nextEntryKey), key.Matches(msg, leftKey), key.Matches(msg, rightKey):
+			m.confirmModalSelected = !m.confirmModalSelected
+			return m, nil
+		case key.Matches(msg, selectKey):
+			m.showConfirmModal = false
+			if m.confirmModalSelected {
+				if err := m.confirmModalClosure(); err != nil {
+					m.status.State = StatusBarStateErr
+					m.status.Message = fmt.Sprintf("Error: %s", err)
+				}
+			}
+			return m.navigateTo(None, TableScreen), nil
+		}
+	}
+
 	switch {
 	case key.Matches(msg, selectKey):
-		// item, ok := m.manageTableMenuList.SelectedItem().(menuItem)
-		// if !ok {
-		// 	return m, nil
-		// }
-		// TODO: Implement
+		// Draw a modal with the data in the current entry
+		m.showTableModal = !m.showTableModal
+	}
+
+	if m.editEntryMode {
+		switch {
+		case key.Matches(msg, deleteEntryKey):
+			m.showConfirmModal = true
+			m.confirmModalSelected = false
+			m.confirmModalText = "Are you sure you want to remove the selected entry?"
+			m.confirmModalClosure = func() error {
+				return m.backend.DeleteEntryFromTable(m.currTableName, m.table.SelectedRow())
+			}
+
+		case key.Matches(msg, editEntryKey):
+			return m.navigateTo(None, AddEntryScreen), nil
+		case key.Matches(msg, undoKey):
+			if err := m.backend.UndoLatest(); err != nil {
+				m.status.State = StatusBarStateErr
+				m.status.Message = fmt.Sprintf("Error undoing operation: %s", err)
+			}
+			return m.navigateTo(None, TableScreen), nil
+		}
 	}
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
+	m.tableModalIndex = m.table.Cursor()
 	return m, cmd
 }
 
 func (m Model) handleAddEntryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.showConfirmModal {
+		switch {
+		case key.Matches(msg, nextEntryKey), key.Matches(msg, leftKey), key.Matches(msg, rightKey):
+			m.confirmModalSelected = !m.confirmModalSelected
+			return m, nil
+		case key.Matches(msg, selectKey):
+			m.showConfirmModal = false
+			if m.confirmModalSelected {
+				if err := m.confirmModalClosure(); err != nil {
+					m.status.State = StatusBarStateErr
+					m.status.Message = fmt.Sprintf("Error: %s", err)
+				}
+				m = m.navigateTo(None, ManageTableScreen).(Model)
+				return m.navigateTo(None, TableScreen), nil
+			}
+			return m, nil
+		}
+	}
 	switch {
 	case key.Matches(msg, sendFormKey):
-		keys, values, err := m.addEntryForm.GetValues()
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error: %s", err)
 
+		if m.editEntryMode {
+			m.showConfirmModal = true
+			m.confirmModalSelected = false
+			m.confirmModalText = "Are you sure you want to update the selected entry?"
+			m.confirmModalClosure = func() error {
+				return m.addOrEditEntry()
+			}
 			return m, nil
 		}
 
-		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+		err := m.addOrEditEntry()
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error: %s", err)
 		}
-
-		err = m.setupTable(false)
-		if err != nil {
-			m.status.State = StatusBarStateErr
-			m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
-			return m, nil
-		}
-
-		m.status.State = StatusBarStateOk
-		m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
 		return m.NavigateBack(), nil
 	}
 
 	var cmd tea.Cmd
 	m.addEntryForm, cmd = m.addEntryForm.Update(msg)
 	return m, cmd
+}
+
+func (m *Model) addOrEditEntry() error {
+	keys, values, err := m.addEntryForm.GetValues()
+	if err != nil {
+		return err
+	}
+
+	if m.editEntryMode {
+		err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys,
+			m.table.SelectedRow(), values)
+	} else {
+		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
+	}
+	if err != nil {
+		return err
+	}
+
+	err = m.setupTable(false)
+	if err != nil {
+		m.status.State = StatusBarStateErr
+		m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
+		return err
+	}
+
+	m.status.State = StatusBarStateOk
+	if m.editEntryMode {
+		m.status.Message = fmt.Sprintf("Updated entry in table %s", m.currTableName)
+		m.editEntryMode = false
+	} else {
+		m.status.Message = fmt.Sprintf("Added entry to table %s", m.currTableName)
+	}
+
+	return nil
 }
 
 func (m Model) NavigateBack() tea.Model {
@@ -220,6 +281,13 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 			Bold(false)
 		m.table.SetStyles(s)
 	case TableScreen:
+		err := m.setupTable(fromScreen == ViewTablesScreen)
+		if err != nil {
+			m.status.State = StatusBarStateErr
+			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
+			return m
+		}
+
 		// Set the style of the selected row when navigating it
 		s := table.DefaultStyles()
 		s.Header = s.Header.
@@ -258,7 +326,6 @@ func (m Model) getTablesAsMenuItems() []list.Item {
 }
 
 func (m *Model) setupTable(showStatusOk bool) error {
-	// TODO: Do I need to set m.currScreenRight?
 	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", m.currTableName)
 	m.showTable = true
 
@@ -282,7 +349,7 @@ func (m *Model) setupTable(showStatusOk bool) error {
 	for i, col := range columns {
 		tableColumns[i] = table.Column{
 			Title: col,
-			Width: len(col) + 4,
+			Width: len(col) + 3,
 		}
 	}
 
@@ -328,6 +395,22 @@ func (m *Model) setupEntryForm() error {
 		field.Input = textinput.New()
 
 		m.addEntryForm.Fields = append(m.addEntryForm.Fields, field)
+	}
+
+	if m.editEntryMode {
+		// Populate the form with the current values
+		fieldIdx := 0
+		for i, value := range m.table.SelectedRow() {
+			if !columnSpecs[i].PrimaryKey {
+				if value != "NULL" {
+					m.addEntryForm.Fields[fieldIdx].Input.SetValue(value)
+				}
+				fieldIdx++
+			} else {
+				m.currRowFilterCol = columnSpecs[i].Name
+				m.currRowFilterVal = value
+			}
+		}
 	}
 
 	m.addEntryForm.Fields[0].Input.Focus()

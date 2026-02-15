@@ -22,7 +22,6 @@ var (
 )
 
 func ValidateInt(value string) error {
-	fmt.Printf("Parsing into int")
 	if !intRe.MatchString(value) {
 		return ValidationError{"value must be int"}
 	}
