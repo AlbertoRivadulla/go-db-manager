@@ -24,9 +24,6 @@ func (m Model) RenderLeftColumn() string {
 		return columnStyle.Render(m.manageTableMenuList.View())
 	case AddEntryScreen:
 		return columnStyle.Render(m.addEntryForm.View())
-
-	case EditEntryScreen:
-		// TODO:
 	case SelectQueryScreen:
 		// TODO:
 	}
@@ -50,10 +47,11 @@ func (m Model) RenderRightColumn() string {
 		sections = append(sections, m.table.View())
 
 		if m.editEntryMode {
-			helpText := helpStyle.Render(fmt.Sprintf("↑/↓: navigate • %s: edit • %s: delete • %s: view entry • ???",
+			helpText := helpStyle.Render(fmt.Sprintf("↑/↓: navigate • %s: edit • %s: delete • %s: view entry • %s: undo",
 				editEntryKey.Keys()[0],
 				deleteEntryKey.Keys()[0],
 				selectKey.Keys()[0],
+				undoKey.Keys()[0],
 			))
 			sections = append(sections, helpText)
 		} else {

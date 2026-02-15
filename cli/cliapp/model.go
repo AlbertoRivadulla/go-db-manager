@@ -19,7 +19,6 @@ const (
 	ViewTablesScreen
 	ManageTableScreen
 	AddEntryScreen
-	EditEntryScreen
 	SelectQueryScreen
 	TableScreen
 	None
@@ -38,7 +37,7 @@ type Model struct {
 	addEntryForm        EntryForm
 
 	// Elements of the right column
-	table    table.Model
+	table table.Model
 
 	currTableName        string
 	currTableDesc        string
