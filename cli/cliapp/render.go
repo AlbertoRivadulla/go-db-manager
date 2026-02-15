@@ -13,7 +13,18 @@ import (
 
 func (m Model) RenderLeftColumn() string {
 	columnStyle := lipgloss.NewStyle().
-		Padding(1).Width(m.leftWidth)
+		Padding(1).
+		Width(m.leftWidth).
+		BorderStyle(lipgloss.RoundedBorder()).
+		Padding(1, 1)
+
+	if m.currScreenLeft == m.currScreenFocus {
+		columnStyle = columnStyle.
+			BorderForeground(menuFocusedBorderColor)
+	} else {
+		columnStyle = columnStyle.
+			BorderForeground(menuUnfocusedBorderColor)
+	}
 
 	switch m.currScreenLeft {
 	case MainMenuScreen:
@@ -157,7 +168,7 @@ func (m Model) renderConfirmModalContent() string {
 
 	mainText, mainTextWidth := utils.WrapText(m.confirmModalText, m.maxTableModalWidth)
 	mainText = whiteStyle.Render(mainText)
-	modalWidth := max(mainTextWidth + 2, m.minConfirmModalWidth)
+	modalWidth := max(mainTextWidth+2, m.minConfirmModalWidth)
 
 	emptyLineStyle := lipgloss.NewStyle().
 		Background(modalBackgroundColor)
@@ -172,7 +183,7 @@ func (m Model) renderConfirmModalContent() string {
 		Background(modalBackgroundColor).
 		Width(modalWidth).
 		Align(lipgloss.Center)
-	
+
 	buttons = buttonsStyle.Render(buttons)
 
 	return lipgloss.JoinVertical(

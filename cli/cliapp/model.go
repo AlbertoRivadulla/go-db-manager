@@ -230,7 +230,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// handle resize if needed
 		m.width = msg.Width
 		m.height = msg.Height
-		m.mainItemsHeight = m.height - 2
+		m.mainItemsHeight = m.height - 6
 
 		// Column width
 		m.leftWidth = int(float64(m.width) * 0.4)
@@ -245,9 +245,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.status.Width = m.width
 
-		m.table.SetHeight(m.height - 10)
+		m.table.SetHeight(m.height - 12)
 
-		m.addEntryForm.Height = m.height
+		m.addEntryForm.Height = m.mainItemsHeight
 
 		if !m.ready {
 			m.ready = true
