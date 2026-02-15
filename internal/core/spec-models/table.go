@@ -100,6 +100,23 @@ func (c Column) Validate() error {
 	return nil
 }
 
+func (t Table) ValuesWithoutPrimaryKey(values []string, ignoreNull bool) []string {
+	// This assumes that the array given has one value for each of the columns in the table,
+	// including the primary key
+
+	var outValues []string
+	for i, val := range values {
+		if !t.Columns[i].PrimaryKey {
+			if ignoreNull && val == "NULL" {
+				continue
+			}
+			outValues = append(outValues, val)
+		}
+	}
+
+	return outValues
+}
+
 func (t Table) QueryCreate() (string, error) {
 	var defs []string
 

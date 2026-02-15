@@ -144,6 +144,12 @@ func (m Model) handleTableScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, editEntryKey):
 			return m.navigateTo(None, AddEntryScreen), nil
+		case key.Matches(msg, undoKey):
+			if err := m.backend.UndoLatest(); err != nil {
+				m.status.State = StatusBarStateErr
+				m.status.Message = fmt.Sprintf("Error undoing operation: %s", err)
+			}
+			return m.navigateTo(None, TableScreen), nil
 		}
 	}
 
@@ -205,7 +211,8 @@ func (m *Model) addOrEditEntry() error {
 	}
 
 	if m.editEntryMode {
-		err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys, values)
+		err = m.backend.UpdateRowInTable(m.currTableName, m.currRowFilterCol, m.currRowFilterVal, keys,
+			m.table.SelectedRow(), values)
 	} else {
 		err = m.backend.AddEntryToTable(m.currTableName, keys, values)
 	}

@@ -10,13 +10,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type RowOperation int
+
+const (
+	UpdateRow RowOperation = iota
+	DeleteRow
+)
+
 // Used for the history of updates
 type RowUpdateOperation struct {
 	Table        string
 	Columns      []string
 	Values       []string
 	RowFilterCol string
-	RowFilterval string
+	RowFilterVal string
+	Operation    RowOperation
 }
 
 type Backend struct {
@@ -25,6 +33,8 @@ type Backend struct {
 	mapTableSpecs map[string]*core.TableSpec
 	// TODO: queries
 	// TODO: rules
+
+	UndoHistory []RowUpdateOperation
 }
 
 func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
@@ -160,16 +170,61 @@ func (backend *Backend) AddEntryToTable(table string, columns []string, values [
 	return err
 }
 
-func (backend *Backend) UpdateRowInTable(table string, filterCol string, filterVal string, columns []string, values []string) error {
-	query := backend.mapTableSpecs[table].Table.QueryUpdateRow(filterCol, filterVal, columns, values)
+func (backend *Backend) UpdateRowInTable(table string, filterCol string, filterVal string, columns []string,
+	oldValues []string, newValues []string) error {
+	thisOperation := RowUpdateOperation{
+		Table:        table,
+		Columns:      columns,
+		Values:       backend.mapTableSpecs[table].Table.ValuesWithoutPrimaryKey(oldValues, true),
+		RowFilterCol: filterCol,
+		RowFilterVal: filterVal,
+		Operation:    UpdateRow,
+	}
+	backend.UndoHistory = append(backend.UndoHistory, thisOperation)
+
+	query := backend.mapTableSpecs[table].Table.QueryUpdateRow(filterCol, filterVal, columns, newValues)
 	_, err := backend.Store.RunQueryNoReturn(query)
 	return err
 }
 
 func (backend *Backend) DeleteEntryFromTable(table string, row []string) error {
+	thisOperation := RowUpdateOperation{
+		Table:     table,
+		Values:    backend.mapTableSpecs[table].Table.ValuesWithoutPrimaryKey(row, false),
+		Operation: DeleteRow,
+	}
+	backend.UndoHistory = append(backend.UndoHistory, thisOperation)
+
 	query := backend.mapTableSpecs[table].Table.QueryDeleteEntry(row)
 	_, err := backend.Store.RunQueryNoReturn(query)
 	return err
+}
+
+func (backend *Backend) UndoLatest() error {
+	if len(backend.UndoHistory) > 0 {
+		operation := backend.UndoHistory[len(backend.UndoHistory)-1]
+		backend.UndoHistory = backend.UndoHistory[:len(backend.UndoHistory)-1]
+
+		switch operation.Operation {
+		case UpdateRow:
+			query := backend.mapTableSpecs[operation.Table].Table.QueryUpdateRow(operation.RowFilterCol,
+				operation.RowFilterVal, operation.Columns, operation.Values)
+			_, err := backend.Store.RunQueryNoReturn(query)
+			return err
+		case DeleteRow:
+			var columns []string
+			for _, col := range backend.mapTableSpecs[operation.Table].Table.Columns {
+				if !col.PrimaryKey {
+					columns = append(columns, col.Name)
+				}
+			}
+			query := backend.mapTableSpecs[operation.Table].Table.QueryAddEntry(columns, operation.Values)
+			_, err := backend.Store.RunQueryNoReturn(query)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (backend *Backend) Cleanup() {
