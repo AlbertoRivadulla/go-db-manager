@@ -3,6 +3,7 @@ package cliapp
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"dbmanager/internal/core/spec-models"
 
@@ -127,6 +128,10 @@ func (f EntryForm) GetValues() ([]string, []string, error) {
 	var keys []string
 	var values []string
 
+	if err := f.convertDatesInForm(); err != nil {
+		return keys, values, fmt.Errorf("could not convert the date entry: %w", err)
+	}
+
 	if err := f.validate(); err != nil {
 		return keys, values, fmt.Errorf("could not get values from form: %w", err)
 	}
@@ -142,8 +147,37 @@ func (f EntryForm) GetValues() ([]string, []string, error) {
 	return keys, values, nil
 }
 
-func (f EntryForm) validate() error {
+func (f *EntryForm) convertDatesInForm() error {
+	for i, field := range f.Fields {
+		if field.DataType == "timestamp" {
+			layouts := []string{
+				"2/1/2006", // D/M/YYYY or DD/MM/YYYY
+				"2/1/06",   // D/M/YY or DD/MM/YY
+				"2/1",      // D/M or DD/MM
+			}
 
+			for _, layout := range layouts {
+				t, err := time.Parse(layout, field.Input.Value())
+				if err == nil {
+					// If there was not a year in the format, set the current one
+					if !strings.Contains(layout, "06") {
+						now := time.Now()
+						t = time.Date(now.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+					}
+					f.Fields[i].Input.SetValue(
+						t.Format("2006-01-02"),
+					)
+					return nil
+				}
+			}
+			return fmt.Errorf("unrecognized date format: %s", field.Input.Value())
+		}
+	}
+
+	return nil
+}
+
+func (f EntryForm) validate() error {
 	for _, field := range f.Fields {
 		if err := validateField(field); err != nil {
 			return fmt.Errorf("invalid field \"%s\": %w", field.Label, err)
@@ -157,7 +191,9 @@ func validateField(field FormField) error {
 	value := field.Input.Value()
 
 	if field.Required && value == "" {
-		return core.ValidationError{fmt.Sprintf("field must not be empty")}
+		return core.ValidationError{
+			Msg: "field must not be empty",
+		}
 	}
 
 	if value != "" {
