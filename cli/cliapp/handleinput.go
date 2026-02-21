@@ -220,7 +220,7 @@ func (m *Model) addOrEditEntry() error {
 		return err
 	}
 
-	err = m.setupTable(false)
+	err = m.setupTable(false, false)
 	if err != nil {
 		m.status.State = StatusBarStateErr
 		m.status.Message = fmt.Sprintf("Error updating table %s: %s", m.currTableName, err)
@@ -264,7 +264,7 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 	case ManageTableScreen:
 		m.currScreenLeft = toScreen
 
-		err := m.setupTable(fromScreen == ViewTablesScreen)
+		err := m.setupTable(fromScreen == ViewTablesScreen, fromScreen == ViewTablesScreen)
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
@@ -281,7 +281,7 @@ func (m Model) navigateTo(fromScreen, toScreen Screen) tea.Model {
 			Bold(false)
 		m.table.SetStyles(s)
 	case TableScreen:
-		err := m.setupTable(fromScreen == ViewTablesScreen)
+		err := m.setupTable(fromScreen == ViewTablesScreen, fromScreen == ViewTablesScreen)
 		if err != nil {
 			m.status.State = StatusBarStateErr
 			m.status.Message = fmt.Sprintf("Error setting up table %s: %s", m.currTableName, err)
@@ -325,12 +325,12 @@ func (m Model) getTablesAsMenuItems() []list.Item {
 	return menuItems
 }
 
-func (m *Model) setupTable(showStatusOk bool) error {
+func (m *Model) setupTable(showStatusOk bool, newTable bool) error {
 	m.manageTableMenuList.Title = fmt.Sprintf("Manage table - %s", m.currTableName)
 	m.showTable = true
 
-	// Get the columns in the table
-	columns, err := m.backend.GetColumnsInTable(m.currTableName)
+	// Get the specs for columns in the table
+	columnSpecs, err := m.backend.GetColumnSpecsInTable(m.currTableName)
 	if err != nil {
 		return fmt.Errorf("Error reading columns: %w", err)
 	}
@@ -345,11 +345,14 @@ func (m *Model) setupTable(showStatusOk bool) error {
 		m.status.Message = fmt.Sprintf("Read table %v", m.currTableName)
 	}
 
-	tableColumns := make([]table.Column, len(columns))
-	for i, col := range columns {
+	tableColumns := make([]table.Column, len(columnSpecs))
+	for i, colSpec := range columnSpecs {
 		tableColumns[i] = table.Column{
-			Title: col,
-			Width: len(col) + 3,
+			Title: colSpec.Name,
+			Width: len(colSpec.Name) + 3,
+		}
+		if colSpec.WidthHint != 0 {
+			tableColumns[i].Width = max(tableColumns[i].Width, colSpec.WidthHint)
 		}
 	}
 
@@ -361,8 +364,17 @@ func (m *Model) setupTable(showStatusOk bool) error {
 		}
 	}
 
-	m.table.SetColumns(tableColumns)
-	m.table.SetRows(tableRows)
+	if newTable {
+		m.table = table.New(
+			table.WithFocused(true),
+			table.WithHeight(m.height - 12),
+			table.WithColumns(tableColumns),
+			table.WithRows(tableRows),
+		)
+	} else {
+		m.table.SetColumns(tableColumns)
+		m.table.SetRows(tableRows)
+	}
 
 	m.currTableNrEntries = len(tableRows)
 
@@ -382,7 +394,7 @@ func (m *Model) setupEntryForm() error {
 	m.addEntryForm.Fields = []FormField{}
 
 	for _, colSpec := range columnSpecs {
-		if colSpec.PrimaryKey {
+		if colSpec.AutoIncrement {
 			continue
 		}
 

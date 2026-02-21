@@ -44,6 +44,7 @@ type Column struct {
 	Default       *string `yaml:"default"`
 	Check         *string `yaml:"check"`
 	Comment       string  `yaml:"comment"`
+	WidthHint     int     `yaml:"widthHint"`
 }
 
 func (s TableSpec) Validate() error {
