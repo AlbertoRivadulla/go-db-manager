@@ -118,6 +118,10 @@ func (t Table) ValuesWithoutPrimaryKey(values []string, ignoreNull bool) []strin
 	return outValues
 }
 
+func (t Table) QueryTableInfo() (string, error) {
+	return fmt.Sprintf("PRAGMA table_info(%s)", t.Name), nil
+}
+
 func (t Table) QueryCreate() (string, error) {
 	var defs []string
 
@@ -137,6 +141,16 @@ func (t Table) QueryCreate() (string, error) {
 		"CREATE TABLE IF NOT EXISTS %s (\n  %s\n);",
 		t.Name,
 		strings.Join(defs, ",\n  "),
+	)
+
+	return stmt, nil
+}
+
+func (t Table) QueryAddNewColumn(newColSpec Column) (string, error) {
+	stmt := fmt.Sprintf(
+		"ALTER TABLE %s ADD COLUMN %s;",
+		t.Name,
+		newColSpec.QueryDefinition(),
 	)
 
 	return stmt, nil

@@ -46,62 +46,6 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 		return nil, fmt.Errorf("Error opening the SQLite store: %w", err)
 	}
 
-	// // NOTE: Example of adding data to the database
-	// _, err = store.RunQuery(`
-	//        CREATE TABLE IF NOT EXISTS entries (
-	//            title TEXT NOT NULL,
-	//            content TEXT NOT NULL
-	//        );
-	//    `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	// _, err = store.RunQuery(`
-	// 	INSERT INTO entries VALUES ("my title", "my content")
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	// _, err = store.RunQuery(`
-	// 	INSERT INTO entries VALUES ("my title 2", "my content 2")
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	// _, err = store.RunQuery(`
-	// 	INSERT INTO entries VALUES ("my title 3", "my content 3")
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	// result, err := store.RunQuery(`
-	// 	SELECT * FROM entries
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	//
-	// fmt.Printf("Result:\n")
-	// for k, v := range result {
-	// 	fmt.Printf("\t%s : %s\n", k, v)
-	//    }
-	//
-	// resultMapList, err := store.QueryToMap(`
-	// 	SELECT * FROM entries
-	// `)
-	// if err != nil {
-	// 	fmt.Printf("Error %w\n", err)
-	// }
-	//
-	// fmt.Printf("Result map:\n")
-	// for key := range(resultMapList[0]) {
-	// 	fmt.Printf("\t%s:", key)
-	// 	for _, row := range resultMapList{
-	// 		fmt.Printf("\t%s", row[key])
-	// 	}
-	// 	fmt.Println("")
-	// }
-
 	backend := Backend{
 		Store: *store,
 	}
@@ -113,14 +57,9 @@ func NewBackend(dbPath *string, specsDir *string) (*Backend, error) {
 
 	// Create the different tables
 	for _, tableSpec := range backend.tableSpecs {
-		queryCreate, err := tableSpec.Table.QueryCreate()
+		err := backend.CreateOrModifyTable(tableSpec)
 		if err != nil {
-			return nil, fmt.Errorf("get query to create table %s: %w", tableSpec.Table.Name, err)
-		}
-
-		_, err = backend.Store.RunQueryNoReturn(queryCreate)
-		if err != nil {
-			return nil, fmt.Errorf("create table %s: %w", tableSpec.Table.Name, err)
+			return nil, err
 		}
 	}
 
@@ -152,6 +91,60 @@ func (backend *Backend) GetColumnSpecsInTable(table string) ([]core.Column, erro
 	}
 
 	return tableSpec.Table.Columns, nil
+}
+
+func (backend Backend) CreateOrModifyTable(tableSpec core.TableSpec) error {
+	queryTableInfo, err := tableSpec.Table.QueryTableInfo()
+	if err != nil {
+		return fmt.Errorf("create query to get table info: %w", err)
+	}
+
+	tableInfo, err := backend.Store.QueryTo2DimArray(queryTableInfo)
+	if err != nil {
+		return fmt.Errorf("get table info %s: %w", tableSpec.Table.Name, err)
+	}
+
+	if len(tableInfo) == 0 {
+		queryCreate, err := tableSpec.Table.QueryCreate()
+		if err != nil {
+			return fmt.Errorf("get query to create table %s: %w", tableSpec.Table.Name, err)
+		}
+
+		_, err = backend.Store.RunQueryNoReturn(queryCreate)
+		if err != nil {
+			return fmt.Errorf("create table %s: %w", tableSpec.Table.Name, err)
+		}
+	} else {
+		// Find the columns not existing in the table
+		var newColumns []core.Column
+
+		for _, colInSpec := range tableSpec.Table.Columns {
+			exists := false
+			for _, colInInfo := range tableInfo {
+				if colInSpec.Name == colInInfo[1] {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				newColumns = append(newColumns, colInSpec)
+			}
+		}
+
+		for _, newColSpec := range newColumns {
+			queryAddNewCol, err := tableSpec.Table.QueryAddNewColumn(newColSpec)
+			if err != nil {
+				return fmt.Errorf("get query to add the new column %s: %w", newColSpec.Name, err)
+			}
+
+			_, err = backend.Store.RunQueryNoReturn(queryAddNewCol)
+			if err != nil {
+				return fmt.Errorf("add new column %s: %w", newColSpec.Name, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (backend *Backend) GetEntriesInTable(table string) ([][]string, error) {
