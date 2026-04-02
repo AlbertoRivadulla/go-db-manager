@@ -367,7 +367,7 @@ func (m *Model) setupTable(showStatusOk bool, newTable bool) error {
 	if newTable {
 		m.table = table.New(
 			table.WithFocused(true),
-			table.WithHeight(m.height - 12),
+			table.WithHeight(m.height-12),
 			table.WithColumns(tableColumns),
 			table.WithRows(tableRows),
 		)
@@ -413,15 +413,14 @@ func (m *Model) setupEntryForm() error {
 		// Populate the form with the current values
 		fieldIdx := 0
 		for i, value := range m.table.SelectedRow() {
-			if !columnSpecs[i].PrimaryKey {
-				if value != "NULL" {
-					m.addEntryForm.Fields[fieldIdx].Input.SetValue(value)
-				}
-				fieldIdx++
-			} else {
+			if columnSpecs[i].PrimaryKey {
 				m.currRowFilterCol = columnSpecs[i].Name
 				m.currRowFilterVal = value
 			}
+			if value != "NULL" {
+				m.addEntryForm.Fields[fieldIdx].Input.SetValue(value)
+			}
+			fieldIdx++
 		}
 	}
 

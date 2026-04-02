@@ -151,9 +151,10 @@ func (f *EntryForm) convertDatesInForm() error {
 	for i, field := range f.Fields {
 		if field.DataType == "timestamp" {
 			layouts := []string{
-				"2/1/2006", // D/M/YYYY or DD/MM/YYYY
-				"2/1/06",   // D/M/YY or DD/MM/YY
-				"2/1",      // D/M or DD/MM
+				"2006-01-02", // YYYY-MM-DD
+				"2/1/2006",   // D/M/YYYY or DD/MM/YYYY
+				"2/1/06",     // D/M/YY or DD/MM/YY
+				"2/1",        // D/M or DD/MM
 			}
 
 			for _, layout := range layouts {
